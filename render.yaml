@@ -1,0 +1,36 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+# Render 대시보드에서 "New > Blueprint"로 이 저장소를 연결하면
+# 아래 백엔드 웹 서비스와 PostgreSQL 인스턴스가 자동으로 생성됩니다.
+
+services:
+  - type: web
+    name: skala-study-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skala-study-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: ACCESS_TOKEN_REMEMBER_EXPIRE_MINUTES
+        value: "10080"
+      - key: CORS_ORIGINS
+        # 배포 후 실제 Vercel 프론트엔드 주소로 반드시 교체해주세요 (콤마로 여러 개 가능)
+        value: "https://your-frontend.vercel.app"
+
+databases:
+  - name: skala-study-db
+    plan: free
+    databaseName: skala_study
+    user: skala_user

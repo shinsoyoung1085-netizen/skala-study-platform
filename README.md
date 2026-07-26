@@ -117,12 +117,31 @@ npm run dev
 5. 마이페이지에서 내 정보(이름/관심분야/참여 스터디 수) 확인
 6. 관리자 계정으로 로그인 시 상단 메뉴에 "관리자" 탭이 노출되며 회원/스터디 목록 조회 및 삭제 가능
 
-## 5. 배포 시 참고사항
+## 5. 배포 (Render + Vercel)
 
-- `backend/.env`, `frontend/.env`는 저장소에 커밋하지 않습니다. (`.env.example`을 참고해 배포 환경마다 별도 설정)
-- 프론트엔드 배포 시 `npm run build` 결과물(`frontend/dist`)을 정적 호스팅하고, `VITE_API_BASE_URL`을 배포된 백엔드 도메인으로 설정하세요.
-- 백엔드는 `uvicorn app.main:app` 또는 `gunicorn -k uvicorn.workers.UvicornWorker app.main:app` 등으로 프로덕션 서버에 배포할 수 있습니다.
-- CORS 허용 도메인은 `backend/.env`의 `CORS_ORIGINS`에서 관리합니다.
+이 저장소에는 배포 설정 파일이 이미 포함되어 있습니다: 루트의 `render.yaml`(백엔드+DB), `frontend/vercel.json`(프론트엔드).
+
+### 5.1 백엔드 + DB — Render
+
+1. GitHub에 이 저장소를 푸시해둔 상태에서, [Render 대시보드](https://dashboard.render.com) → **New > Blueprint** → 이 저장소 선택
+2. `render.yaml`을 인식해 `skala-study-backend`(웹 서비스)와 `skala-study-db`(PostgreSQL)가 자동 생성됩니다
+   - `JWT_SECRET_KEY`는 Render가 안전한 값으로 자동 생성
+   - `DATABASE_URL`은 생성된 DB 인스턴스와 자동 연결
+3. 배포가 끝나면 백엔드 주소(예: `https://skala-study-backend.onrender.com`)가 발급됩니다 — 이 주소를 기억해두세요 (5.2에서 사용)
+4. `CORS_ORIGINS` 환경변수는 5.2에서 Vercel 주소를 받은 뒤 다시 돌아와 업데이트해야 합니다 (초기값은 플레이스홀더)
+
+### 5.2 프론트엔드 — Vercel
+
+1. [Vercel 대시보드](https://vercel.com/new) → 이 저장소 Import
+2. **Root Directory**를 `frontend`로 지정 (Vite 프레임워크 자동 인식됨)
+3. 환경변수 `VITE_API_BASE_URL`을 5.1에서 발급된 Render 백엔드 주소로 설정
+4. 배포 완료 후 발급된 Vercel 주소(예: `https://skala-study.vercel.app`)를 확인
+
+### 5.3 마무리
+
+- Render 백엔드의 `CORS_ORIGINS` 환경변수를 실제 Vercel 주소로 업데이트 후 재배포
+- `backend/scripts/create_admin.py`의 기본 관리자 비밀번호(`admin1234!`)를 배포 전 반드시 변경
+- `backend/.env`, `frontend/.env`는 저장소에 커밋하지 않으며, 각 플랫폼의 환경변수 설정 화면에서 별도로 관리합니다
 
 ## 6. 데이터베이스 설계
 
