@@ -26,8 +26,7 @@ services:
       - key: ACCESS_TOKEN_REMEMBER_EXPIRE_MINUTES
         value: "10080"
       - key: CORS_ORIGINS
-        # 배포 후 실제 Vercel 프론트엔드 주소로 반드시 교체해주세요 (콤마로 여러 개 가능)
-        value: "https://your-frontend.vercel.app"
+        value: "https://skala-study-platform.vercel.app"
 
 databases:
   - name: skala-study-db
