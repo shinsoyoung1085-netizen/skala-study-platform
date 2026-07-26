@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-white text-gray-900;
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  /* 카드형 컨테이너 공용 스타일 */
+  .card {
+    @apply rounded-brand border border-gray-100 bg-white p-5 shadow-card transition-shadow duration-200;
+  }
+
+  .card-hover {
+    @apply hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200;
+  }
+}
