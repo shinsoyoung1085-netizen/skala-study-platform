@@ -44,16 +44,23 @@ export function SignupPage() {
 
   const runDuplicateCheck = async (
     field: DuplicateField,
-    setField: (f: DuplicateField) => void,
+    setField: (updater: (prev: DuplicateField) => DuplicateField) => void,
     checker: (value: string) => Promise<boolean>,
   ) => {
-    if (!field.value) return;
-    setField({ ...field, status: "checking" });
+    const valueAtRequestTime = field.value;
+    if (!valueAtRequestTime) return;
+
+    setField((prev) => ({ ...prev, status: "checking" }));
     try {
-      const available = await checker(field.value);
-      setField({ value: field.value, status: available ? "available" : "taken" });
+      const available = await checker(valueAtRequestTime);
+      // 응답이 늦게 도착했을 때, 그 사이 사용자가 값을 바꿨다면 오래된 응답으로 최신 상태를 덮어쓰지 않는다.
+      setField((prev) =>
+        prev.value === valueAtRequestTime
+          ? { value: valueAtRequestTime, status: available ? "available" : "taken" }
+          : prev,
+      );
     } catch {
-      setField({ ...field, status: "idle" });
+      setField((prev) => (prev.value === valueAtRequestTime ? { ...prev, status: "idle" } : prev));
     }
   };
 
