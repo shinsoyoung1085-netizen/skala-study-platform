@@ -4,7 +4,7 @@
 
 services:
   - type: web
-    name: skala-study-backend
+    name: skala-study-platform
     runtime: python
     rootDir: backend
     plan: free
