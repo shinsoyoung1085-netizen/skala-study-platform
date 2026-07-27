@@ -46,6 +46,8 @@ def to_study_response(study: Study, current_user_id: int | None = None) -> Study
         location_label=LOCATION_LABELS.get(study.location, study.location),
         is_online=study.is_online,
         exam_date=study.exam_date,
+        campus=study.creator.campus,
+        campus_label=study.creator.campus_label,
         current_member_count=len(member_ids),
         is_full=len(member_ids) >= study.capacity,
         creator=UserSummary.model_validate(study.creator),

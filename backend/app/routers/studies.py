@@ -7,10 +7,10 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db.database import get_db
 from app.dependencies import get_current_user
-from app.models.enums import CategoryCode, DayOfWeek, Location
+from app.models.enums import Campus, CategoryCode, DayOfWeek, Location
 from app.models.study import Study, StudyDay, StudyMember
 from app.models.user import User
-from app.schemas.study import StudyCreateRequest, StudyListResponse, StudyResponse
+from app.schemas.study import StudyCreateRequest, StudyListResponse, StudyMemberResponse, StudyResponse
 from app.utils.study_mapper import to_study_response
 
 router = APIRouter(prefix="/api/studies", tags=["스터디"])
@@ -19,7 +19,9 @@ router = APIRouter(prefix="/api/studies", tags=["스터디"])
 def _base_query():
     """스터디 조회 시 N+1 쿼리를 피하기 위해 관련 엔티티를 미리 로딩한다."""
     return select(Study).options(
-        selectinload(Study.creator), selectinload(Study.members), selectinload(Study.days)
+        selectinload(Study.creator),
+        selectinload(Study.members).selectinload(StudyMember.user),
+        selectinload(Study.days),
     )
 
 
@@ -62,6 +64,7 @@ def list_studies(
     day_of_week: DayOfWeek | None = Query(default=None, description="요일 필터"),
     location: Location | None = Query(default=None, description="장소 필터"),
     is_online: bool | None = Query(default=None, description="온라인 여부 필터"),
+    campus: Campus | None = Query(default=None, description="캠퍼스 필터 (개설자 소속 캠퍼스 기준)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -77,6 +80,8 @@ def list_studies(
         query = query.where(Study.location == location.value)
     if is_online is not None:
         query = query.where(Study.is_online == is_online)
+    if campus:
+        query = query.join(User, Study.creator_id == User.id).where(User.campus == campus.value)
 
     query = query.order_by(Study.created_at.desc())
 
@@ -116,6 +121,35 @@ def get_study(
 ):
     study = _get_study_or_404(db, study_id)
     return to_study_response(study, current_user_id=current_user.id)
+
+
+@router.get(
+    "/{study_id}/members",
+    response_model=list[StudyMemberResponse],
+    summary="스터디 참여자 목록 조회 (개설자 전용)",
+)
+def list_study_members(
+    study_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    study = _get_study_or_404(db, study_id)
+
+    if study.creator_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "스터디 개설자만 참여자 목록을 볼 수 있습니다.")
+
+    members_sorted = sorted(study.members, key=lambda m: m.joined_at)
+    return [
+        StudyMemberResponse(
+            id=m.user.id,
+            name=m.user.name,
+            username=m.user.username,
+            campus=m.user.campus,
+            campus_label=m.user.campus_label,
+            joined_at=m.joined_at,
+        )
+        for m in members_sorted
+    ]
 
 
 @router.post("/{study_id}/join", response_model=StudyResponse, summary="스터디 참여")

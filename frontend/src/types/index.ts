@@ -52,6 +52,8 @@ export interface Study {
   location_label: string;
   is_online: boolean;
   exam_date: string | null;
+  campus: string;
+  campus_label: string;
   current_member_count: number;
   is_full: boolean;
   creator: UserSummary;
@@ -63,6 +65,15 @@ export interface Study {
 export interface StudyListResponse {
   total: number;
   items: Study[];
+}
+
+export interface StudyMember {
+  id: number;
+  name: string;
+  username: string;
+  campus: string;
+  campus_label: string;
+  joined_at: string;
 }
 
 export interface SignupPayload {
@@ -110,4 +121,5 @@ export interface StudyFilters {
   day_of_week?: string;
   location?: string;
   is_online?: boolean;
+  campus?: string;
 }

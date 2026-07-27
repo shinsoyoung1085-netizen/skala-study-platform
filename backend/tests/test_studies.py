@@ -1,7 +1,7 @@
 """스터디 생성/목록/검색/참여/탈퇴 API 테스트."""
 
 
-def _signup_and_login(client, username="hong123", skala_id="SKALA-0001"):
+def _signup_and_login(client, username="hong123", skala_id="SKALA-0001", campus="PANGYO"):
     client.post(
         "/api/auth/signup",
         json={
@@ -10,7 +10,7 @@ def _signup_and_login(client, username="hong123", skala_id="SKALA-0001"):
             "email": f"{username}@skala.com",
             "password": "password123",
             "skala_id": skala_id,
-            "campus": "PANGYO",
+            "campus": campus,
             "interests": ["OPIC"],
         },
     )
@@ -151,6 +151,44 @@ def test_multi_day_selection_and_smart_labels(client):
     res = client.get("/api/studies", params={"day_of_week": "SAT"}, headers=headers)
     names = {item["name"] for item in res.json()["items"]}
     assert names == {"매일반", "주말반", "토요일반"}
+
+
+def test_campus_derived_from_creator_and_filterable(client):
+    pangyo_headers = _signup_and_login(client, username="pangyoer", skala_id="SKALA-PG", campus="PANGYO")
+    ulsan_headers = _signup_and_login(client, username="ulsaner", skala_id="SKALA-US", campus="ULSAN")
+
+    pangyo_study = client.post(
+        "/api/studies", json=_study_payload(name="판교스터디"), headers=pangyo_headers
+    ).json()
+    assert pangyo_study["campus"] == "PANGYO"
+    assert pangyo_study["campus_label"] == "판교"
+
+    client.post("/api/studies", json=_study_payload(name="울산스터디"), headers=ulsan_headers)
+
+    res = client.get("/api/studies", params={"campus": "ULSAN"}, headers=pangyo_headers)
+    names = {item["name"] for item in res.json()["items"]}
+    assert names == {"울산스터디"}
+
+
+def test_only_creator_can_view_member_list(client):
+    owner_headers = _signup_and_login(client, username="leader1", skala_id="SKALA-LEAD1")
+    member_headers = _signup_and_login(client, username="joiner1", skala_id="SKALA-JOIN1", campus="GWANGJU")
+    outsider_headers = _signup_and_login(client, username="outsider1", skala_id="SKALA-OUT1")
+
+    study = client.post(
+        "/api/studies", json=_study_payload(capacity=5), headers=owner_headers
+    ).json()
+    study_id = study["id"]
+    client.post(f"/api/studies/{study_id}/join", headers=member_headers)
+
+    forbidden_res = client.get(f"/api/studies/{study_id}/members", headers=outsider_headers)
+    assert forbidden_res.status_code == 403
+
+    ok_res = client.get(f"/api/studies/{study_id}/members", headers=owner_headers)
+    assert ok_res.status_code == 200
+    usernames = [m["username"] for m in ok_res.json()]
+    assert usernames == ["leader1", "joiner1"]
+    assert ok_res.json()[1]["campus_label"] == "광주"
 
 
 def test_exam_date_optional(client):

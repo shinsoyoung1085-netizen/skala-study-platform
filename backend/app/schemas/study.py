@@ -41,6 +41,8 @@ class StudyResponse(BaseModel):
     location_label: str
     is_online: bool
     exam_date: date | None
+    campus: str = Field(description="개설자 소속 캠퍼스 기준으로 스터디를 분류")
+    campus_label: str
     current_member_count: int
     is_full: bool
     creator: UserSummary
@@ -54,3 +56,16 @@ class StudyResponse(BaseModel):
 class StudyListResponse(BaseModel):
     total: int
     items: list[StudyResponse]
+
+
+class StudyMemberResponse(BaseModel):
+    """스터디 참여자 목록 조회 응답 (개설자 전용)."""
+
+    id: int
+    name: str
+    username: str
+    campus: str
+    campus_label: str
+    joined_at: datetime
+
+    model_config = {"from_attributes": True}

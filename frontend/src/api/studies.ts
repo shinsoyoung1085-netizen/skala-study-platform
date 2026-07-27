@@ -1,5 +1,5 @@
 import { apiClient } from "@/api/client";
-import type { Study, StudyCreatePayload, StudyFilters, StudyListResponse } from "@/types";
+import type { Study, StudyCreatePayload, StudyFilters, StudyListResponse, StudyMember } from "@/types";
 
 export async function fetchStudies(filters: StudyFilters): Promise<StudyListResponse> {
   const { data } = await apiClient.get<StudyListResponse>("/api/studies", {
@@ -34,4 +34,9 @@ export async function leaveStudy(studyId: number): Promise<void> {
 
 export async function deleteStudy(studyId: number): Promise<void> {
   await apiClient.delete(`/api/studies/${studyId}`);
+}
+
+export async function fetchStudyMembers(studyId: number): Promise<StudyMember[]> {
+  const { data } = await apiClient.get<StudyMember[]>(`/api/studies/${studyId}/members`);
+  return data;
 }

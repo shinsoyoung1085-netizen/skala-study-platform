@@ -24,7 +24,10 @@ export function StudyCard({ study, onJoin, joinLoading = false }: StudyCardProps
           >
             {study.name}
           </button>
-          <Badge tone="primary">{study.category_label}</Badge>
+          <div className="flex gap-1.5">
+            <Badge tone="primary">{study.category_label}</Badge>
+            <Badge tone="neutral">{study.campus_label}</Badge>
+          </div>
         </div>
         {study.is_full && <Badge tone="danger">모집완료</Badge>}
       </div>

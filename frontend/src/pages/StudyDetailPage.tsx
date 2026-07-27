@@ -2,15 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { extractErrorMessage } from "@/api/client";
-import { deleteStudy, fetchStudyDetail, joinStudy, leaveStudy } from "@/api/studies";
+import { deleteStudy, fetchStudyDetail, fetchStudyMembers, joinStudy, leaveStudy } from "@/api/studies";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
 import { Spinner } from "@/components/common/Spinner";
 import { PageContainer } from "@/components/layout/PageContainer";
-import type { Study } from "@/types";
+import type { Study, StudyMember } from "@/types";
 
-/** 스터디 상세 페이지: 정보 조회, 참여, 탈퇴를 처리한다. */
+/** 스터디 상세 페이지: 정보 조회, 참여, 탈퇴를 처리한다. 개설자에게는 참여자 목록도 보여준다. */
 export function StudyDetailPage() {
   const { studyId } = useParams<{ studyId: string }>();
   const navigate = useNavigate();
@@ -19,6 +19,9 @@ export function StudyDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isActing, setIsActing] = useState(false);
+
+  const [members, setMembers] = useState<StudyMember[] | null>(null);
+  const [membersError, setMembersError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!studyId) return;
@@ -37,6 +40,18 @@ export function StudyDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 개설자에게만 참여자 목록을 별도로 불러온다.
+  useEffect(() => {
+    if (!study?.is_creator) {
+      setMembers(null);
+      return;
+    }
+    setMembersError(null);
+    fetchStudyMembers(study.id)
+      .then(setMembers)
+      .catch((err) => setMembersError(extractErrorMessage(err, "참여자 목록을 불러오지 못했습니다.")));
+  }, [study?.id, study?.is_creator, study?.current_member_count]);
 
   const handleJoin = async () => {
     if (!study) return;
@@ -94,7 +109,10 @@ export function StudyDetailPage() {
         <div className="card flex flex-col gap-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Badge tone="primary">{study.category_label}</Badge>
+              <div className="flex gap-1.5">
+                <Badge tone="primary">{study.category_label}</Badge>
+                <Badge tone="neutral">{study.campus_label}</Badge>
+              </div>
               <h1 className="mt-2 text-2xl font-extrabold text-gray-900">{study.name}</h1>
               <p className="mt-1 text-sm text-gray-500">
                 개설자: {study.creator.name} ({study.creator.username})
@@ -117,6 +135,32 @@ export function StudyDetailPage() {
               {study.description || "등록된 설명이 없습니다."}
             </p>
           </div>
+
+          {study.is_creator && (
+            <div>
+              <h2 className="mb-2 text-sm font-semibold text-gray-700">참여자 목록 (개설자만 볼 수 있어요)</h2>
+              {membersError && <Alert>{membersError}</Alert>}
+              {!membersError && !members && <Spinner label="참여자 목록을 불러오는 중..." />}
+              {members && (
+                <div className="flex flex-col gap-2">
+                  {members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-2.5 text-sm"
+                    >
+                      <div>
+                        <span className="font-medium text-gray-800">{member.name}</span>
+                        <span className="ml-2 text-gray-400">
+                          {member.username} · {member.campus_label}
+                        </span>
+                      </div>
+                      {member.username === study.creator.username && <Badge tone="primary">개설자</Badge>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-3">
             {study.is_creator ? (
