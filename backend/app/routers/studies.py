@@ -156,3 +156,19 @@ def leave_study(
     db.delete(membership)
     db.commit()
     return {"message": "스터디에서 탈퇴했습니다."}
+
+
+@router.delete("/{study_id}", status_code=status.HTTP_200_OK, summary="스터디 삭제 (개설자 본인만)")
+def delete_study(
+    study_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    study = _get_study_or_404(db, study_id)
+
+    if study.creator_id != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "본인이 개설한 스터디만 삭제할 수 있습니다.")
+
+    db.delete(study)
+    db.commit()
+    return {"message": "스터디가 삭제되었습니다."}

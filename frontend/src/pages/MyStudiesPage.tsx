@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { extractErrorMessage } from "@/api/client";
-import { fetchMyStudies, leaveStudy } from "@/api/studies";
+import { deleteStudy, fetchMyStudies, leaveStudy } from "@/api/studies";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -17,6 +17,7 @@ export function MyStudiesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leavingId, setLeavingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -45,6 +46,19 @@ export function MyStudiesPage() {
       setError(extractErrorMessage(err, "스터디 탈퇴에 실패했습니다."));
     } finally {
       setLeavingId(null);
+    }
+  };
+
+  const handleDelete = async (studyId: number) => {
+    if (!window.confirm("정말 이 스터디를 삭제하시겠습니까? 참여중인 회원도 모두 함께 빠지게 됩니다.")) return;
+    setDeletingId(studyId);
+    try {
+      await deleteStudy(studyId);
+      await load();
+    } catch (err) {
+      setError(extractErrorMessage(err, "스터디 삭제에 실패했습니다."));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -80,14 +94,25 @@ export function MyStudiesPage() {
                 <Button variant="outline" size="sm" onClick={() => navigate(`/studies/${study.id}`)}>
                   상세보기
                 </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  isLoading={leavingId === study.id}
-                  onClick={() => handleLeave(study.id)}
-                >
-                  탈퇴하기
-                </Button>
+                {study.is_creator ? (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    isLoading={deletingId === study.id}
+                    onClick={() => handleDelete(study.id)}
+                  >
+                    삭제하기
+                  </Button>
+                ) : (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    isLoading={leavingId === study.id}
+                    onClick={() => handleLeave(study.id)}
+                  >
+                    탈퇴하기
+                  </Button>
+                )}
               </div>
             </div>
           ))}

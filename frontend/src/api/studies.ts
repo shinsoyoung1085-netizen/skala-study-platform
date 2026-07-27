@@ -31,3 +31,7 @@ export async function joinStudy(studyId: number): Promise<Study> {
 export async function leaveStudy(studyId: number): Promise<void> {
   await apiClient.delete(`/api/studies/${studyId}/leave`);
 }
+
+export async function deleteStudy(studyId: number): Promise<void> {
+  await apiClient.delete(`/api/studies/${studyId}`);
+}

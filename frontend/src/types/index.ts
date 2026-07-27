@@ -52,6 +52,7 @@ export interface Study {
   is_full: boolean;
   creator: UserSummary;
   is_joined: boolean;
+  is_creator: boolean;
   created_at: string;
 }
 

@@ -45,6 +45,7 @@ class StudyResponse(BaseModel):
     is_full: bool
     creator: UserSummary
     is_joined: bool = Field(default=False, description="현재 로그인한 회원의 참여 여부")
+    is_creator: bool = Field(default=False, description="현재 로그인한 회원이 개설자인지 여부")
     created_at: datetime
 
     model_config = {"from_attributes": True}

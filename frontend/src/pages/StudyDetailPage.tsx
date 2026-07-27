@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { extractErrorMessage } from "@/api/client";
-import { fetchStudyDetail, joinStudy, leaveStudy } from "@/api/studies";
+import { deleteStudy, fetchStudyDetail, joinStudy, leaveStudy } from "@/api/studies";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -67,6 +67,20 @@ export function StudyDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!study) return;
+    if (!window.confirm("정말 이 스터디를 삭제하시겠습니까? 참여중인 회원도 모두 함께 빠지게 됩니다.")) return;
+    setIsActing(true);
+    setError(null);
+    try {
+      await deleteStudy(study.id);
+      navigate("/studies", { replace: true });
+    } catch (err) {
+      setError(extractErrorMessage(err, "스터디 삭제에 실패했습니다."));
+      setIsActing(false);
+    }
+  };
+
   return (
     <PageContainer>
       <button className="mb-4 text-sm text-gray-400 hover:text-gray-600" onClick={() => navigate(-1)}>
@@ -105,7 +119,11 @@ export function StudyDetailPage() {
           </div>
 
           <div className="flex gap-3">
-            {study.is_joined ? (
+            {study.is_creator ? (
+              <Button variant="danger" onClick={handleDelete} isLoading={isActing}>
+                스터디 삭제하기
+              </Button>
+            ) : study.is_joined ? (
               <Button variant="danger" onClick={handleLeave} isLoading={isActing}>
                 탈퇴하기
               </Button>

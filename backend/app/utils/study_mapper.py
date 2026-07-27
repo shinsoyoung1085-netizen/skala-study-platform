@@ -50,5 +50,6 @@ def to_study_response(study: Study, current_user_id: int | None = None) -> Study
         is_full=len(member_ids) >= study.capacity,
         creator=UserSummary.model_validate(study.creator),
         is_joined=current_user_id in member_ids if current_user_id else False,
+        is_creator=current_user_id == study.creator_id if current_user_id else False,
         created_at=study.created_at,
     )

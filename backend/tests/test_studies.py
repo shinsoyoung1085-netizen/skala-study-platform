@@ -102,6 +102,24 @@ def test_my_studies(client):
     assert my_res.json()["total"] == 1
 
 
+def test_creator_can_delete_own_study_but_others_cannot(client):
+    owner_headers = _signup_and_login(client, username="owner2", skala_id="SKALA-OWNER2")
+    other_headers = _signup_and_login(client, username="other2", skala_id="SKALA-OTHER2")
+
+    study = client.post("/api/studies", json=_study_payload(), headers=owner_headers).json()
+    study_id = study["id"]
+    assert study["is_creator"] is True
+
+    forbidden_res = client.delete(f"/api/studies/{study_id}", headers=other_headers)
+    assert forbidden_res.status_code == 403
+
+    delete_res = client.delete(f"/api/studies/{study_id}", headers=owner_headers)
+    assert delete_res.status_code == 200
+
+    not_found_res = client.get(f"/api/studies/{study_id}", headers=owner_headers)
+    assert not_found_res.status_code == 404
+
+
 def test_multi_day_selection_and_smart_labels(client):
     headers = _signup_and_login(client)
 
