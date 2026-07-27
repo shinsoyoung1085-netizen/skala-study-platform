@@ -10,6 +10,7 @@ def _signup_and_login(client, username="hong123", skala_id="SKALA-0001"):
             "email": f"{username}@skala.com",
             "password": "password123",
             "skala_id": skala_id,
+            "campus": "PANGYO",
             "interests": ["OPIC"],
         },
     )

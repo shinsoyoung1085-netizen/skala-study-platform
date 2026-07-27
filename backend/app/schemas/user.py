@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.models.enums import CategoryCode
+from app.models.enums import Campus, CategoryCode
 
 
 class SignupRequest(BaseModel):
@@ -16,6 +16,7 @@ class SignupRequest(BaseModel):
     email: EmailStr = Field(..., description="이메일")
     password: str = Field(..., min_length=8, max_length=64, description="비밀번호 (bcrypt 제한으로 최대 64자)")
     skala_id: str = Field(..., min_length=1, max_length=50, description="SKALA 고유번호")
+    campus: Campus = Field(..., description="소속 캠퍼스 (판교/광주/울산)")
     interests: list[CategoryCode] = Field(default_factory=list, description="관심분야 (복수 선택)")
 
     @field_validator("username")
@@ -65,12 +66,36 @@ class UserProfileResponse(BaseModel):
     username: str
     email: str
     skala_id: str
+    campus: str
+    campus_label: str
     is_admin: bool
     interests: list[str]
     joined_study_count: int
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class UpdateProfileRequest(BaseModel):
+    """마이페이지에서 아이디/이메일/캠퍼스를 수정할 때 사용하는 요청 바디. 값이 온 필드만 수정한다."""
+
+    username: str | None = Field(default=None, min_length=4, max_length=50, description="아이디")
+    email: EmailStr | None = Field(default=None, description="이메일")
+    campus: Campus | None = Field(default=None, description="소속 캠퍼스")
+
+    @field_validator("username")
+    @classmethod
+    def username_alnum(cls, v: str | None) -> str | None:
+        if v is not None and (not v.isascii() or not v.replace("_", "").isalnum()):
+            raise ValueError("아이디는 영문, 숫자, 밑줄(_)만 사용할 수 있습니다.")
+        return v
+
+
+class ChangePasswordRequest(BaseModel):
+    """마이페이지에서 비밀번호를 변경할 때 사용하는 요청 바디."""
+
+    current_password: str = Field(..., description="현재 비밀번호")
+    new_password: str = Field(..., min_length=8, max_length=64, description="새 비밀번호")
 
 
 class AdminUserResponse(BaseModel):
@@ -81,6 +106,8 @@ class AdminUserResponse(BaseModel):
     username: str
     email: str
     skala_id: str
+    campus: str
+    campus_label: str
     is_admin: bool
     created_at: datetime
 

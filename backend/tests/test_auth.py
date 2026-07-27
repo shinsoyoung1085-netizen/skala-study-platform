@@ -8,6 +8,7 @@ def _signup_payload(**overrides):
         "email": "hong@skala.com",
         "password": "password123",
         "skala_id": "SKALA-0001",
+        "campus": "PANGYO",
         "interests": ["OPIC", "SQLD"],
     }
     payload.update(overrides)
@@ -21,6 +22,8 @@ def test_signup_success(client):
     assert body["username"] == "hong123"
     assert set(body["interests"]) == {"OPIC", "SQLD"}
     assert body["joined_study_count"] == 0
+    assert body["campus"] == "PANGYO"
+    assert body["campus_label"] == "판교"
 
 
 def test_signup_duplicate_username(client):

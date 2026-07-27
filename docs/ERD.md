@@ -32,6 +32,7 @@ erDiagram
         string email UK "이메일"
         string hashed_password "암호화된 비밀번호"
         string skala_id UK "SKALA 고유번호"
+        string campus "소속 캠퍼스"
         bool is_admin "관리자 여부"
         datetime created_at
     }
@@ -99,6 +100,16 @@ erDiagram
 
 - 자격증/어학 시험을 목표로 하는 스터디를 위한 선택적 날짜 필드 (nullable)
 - 수업스터디, 기타 등 시험이 없는 스터디는 비워둘 수 있음
+
+### 4.2.2 소속 캠퍼스 (`users.campus`)
+
+| 코드 | 라벨 |
+|---|---|
+| PANGYO | 판교 |
+| GWANGJU | 광주 |
+| ULSAN | 울산 |
+
+- 회원가입 시 필수 선택, 마이페이지에서 이후 변경 가능
 
 ### 4.3 장소 (`location`)
 

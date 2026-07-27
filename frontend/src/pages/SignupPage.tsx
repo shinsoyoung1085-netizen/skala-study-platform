@@ -7,6 +7,8 @@ import { Alert } from "@/components/common/Alert";
 import { Button } from "@/components/common/Button";
 import { Checkbox } from "@/components/common/Checkbox";
 import { Input } from "@/components/common/Input";
+import { Select } from "@/components/common/Select";
+import { CAMPUS_OPTIONS } from "@/constants/campusOptions";
 import { INTEREST_GROUPS } from "@/constants/interestGroups";
 
 type AvailabilityState = "idle" | "checking" | "available" | "taken";
@@ -26,6 +28,7 @@ export function SignupPage() {
   const [username, setUsername] = useState<DuplicateField>(INITIAL_DUPLICATE_FIELD);
   const [email, setEmail] = useState<DuplicateField>(INITIAL_DUPLICATE_FIELD);
   const [skalaId, setSkalaId] = useState<DuplicateField>(INITIAL_DUPLICATE_FIELD);
+  const [campus, setCampus] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [interests, setInterests] = useState<Set<string>>(new Set());
@@ -87,6 +90,10 @@ export function SignupPage() {
       setError("SKALA 고유번호 중복 확인을 완료해주세요.");
       return;
     }
+    if (!campus) {
+      setError("캠퍼스를 선택해주세요.");
+      return;
+    }
     if (password.length < 8) {
       setError("비밀번호는 8자 이상이어야 합니다.");
       return;
@@ -104,6 +111,7 @@ export function SignupPage() {
         email: email.value,
         password,
         skala_id: skalaId.value,
+        campus,
         interests: Array.from(interests),
       });
       navigate("/login", { replace: true });
@@ -179,6 +187,15 @@ export function SignupPage() {
             />
             {renderAvailability(skalaId.status)}
           </div>
+
+          <Select
+            label="캠퍼스"
+            options={CAMPUS_OPTIONS}
+            placeholder="캠퍼스를 선택하세요"
+            value={campus}
+            onChange={(e) => setCampus(e.target.value)}
+            required
+          />
 
           <div className="flex flex-col gap-3">
             <label className="text-sm font-medium text-gray-700">관심분야 (복수 선택 가능)</label>

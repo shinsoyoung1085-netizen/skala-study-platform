@@ -18,6 +18,8 @@ export interface UserProfile {
   username: string;
   email: string;
   skala_id: string;
+  campus: string;
+  campus_label: string;
   is_admin: boolean;
   interests: string[];
   joined_study_count: number;
@@ -30,6 +32,8 @@ export interface AdminUser {
   username: string;
   email: string;
   skala_id: string;
+  campus: string;
+  campus_label: string;
   is_admin: boolean;
   created_at: string;
 }
@@ -67,6 +71,7 @@ export interface SignupPayload {
   email: string;
   password: string;
   skala_id: string;
+  campus: string;
   interests: string[];
 }
 
@@ -74,6 +79,17 @@ export interface LoginPayload {
   username: string;
   password: string;
   remember_me: boolean;
+}
+
+export interface UpdateProfilePayload {
+  username?: string;
+  email?: string;
+  campus?: string;
+}
+
+export interface ChangePasswordPayload {
+  current_password: string;
+  new_password: string;
 }
 
 export interface StudyCreatePayload {

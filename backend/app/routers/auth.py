@@ -59,6 +59,7 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         email=payload.email,
         hashed_password=hash_password(payload.password),
         skala_id=payload.skala_id,
+        campus=payload.campus.value,
     )
     db.add(user)
     db.flush()  # user.id를 확보하기 위해 flush
@@ -75,6 +76,8 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         username=user.username,
         email=user.email,
         skala_id=user.skala_id,
+        campus=user.campus,
+        campus_label=user.campus_label,
         is_admin=user.is_admin,
         interests=[i.interest for i in user.interests],
         joined_study_count=0,

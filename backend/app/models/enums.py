@@ -36,6 +36,14 @@ class Location(str, Enum):
     ETC = "ETC"
 
 
+class Campus(str, Enum):
+    """회원이 소속된 SKALA 캠퍼스."""
+
+    PANGYO = "PANGYO"
+    GWANGJU = "GWANGJU"
+    ULSAN = "ULSAN"
+
+
 # 프론트엔드 표시용 한글 라벨 매핑 (API 응답에서 label로 함께 내려줄 때 사용)
 CATEGORY_LABELS: dict[str, str] = {
     CategoryCode.OPIC: "OPIC",
@@ -64,4 +72,10 @@ LOCATION_LABELS: dict[str, str] = {
     Location.CAFE: "카페",
     Location.ONLINE: "온라인",
     Location.ETC: "기타",
+}
+
+CAMPUS_LABELS: dict[str, str] = {
+    Campus.PANGYO: "판교",
+    Campus.GWANGJU: "광주",
+    Campus.ULSAN: "울산",
 }
