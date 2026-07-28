@@ -97,6 +97,7 @@ export function AdminPage() {
                 <th className="py-2 pr-4">아이디</th>
                 <th className="py-2 pr-4">이메일</th>
                 <th className="py-2 pr-4">SKALA 고유번호</th>
+                <th className="py-2 pr-4">캠퍼스</th>
                 <th className="py-2 pr-4">권한</th>
                 <th className="py-2"></th>
               </tr>
@@ -108,6 +109,7 @@ export function AdminPage() {
                   <td className="py-3 pr-4">{u.username}</td>
                   <td className="py-3 pr-4">{u.email}</td>
                   <td className="py-3 pr-4">{u.skala_id}</td>
+                  <td className="py-3 pr-4">{u.campus_label}</td>
                   <td className="py-3 pr-4">
                     {u.is_admin ? <Badge tone="primary">관리자</Badge> : <Badge>일반회원</Badge>}
                   </td>
@@ -130,6 +132,7 @@ export function AdminPage() {
               <tr className="border-b border-gray-100 text-gray-400">
                 <th className="py-2 pr-4">스터디명</th>
                 <th className="py-2 pr-4">카테고리</th>
+                <th className="py-2 pr-4">캠퍼스</th>
                 <th className="py-2 pr-4">개설자</th>
                 <th className="py-2 pr-4">인원</th>
                 <th className="py-2"></th>
@@ -140,6 +143,7 @@ export function AdminPage() {
                 <tr key={s.id} className="border-b border-gray-50">
                   <td className="py-3 pr-4">{s.name}</td>
                   <td className="py-3 pr-4">{s.category_label}</td>
+                  <td className="py-3 pr-4">{s.campus_label}</td>
                   <td className="py-3 pr-4">{s.creator.name}</td>
                   <td className="py-3 pr-4">
                     {s.current_member_count} / {s.capacity}
