@@ -219,6 +219,10 @@ export interface MemberStats {
   campus_counts: CampusCount[];
 }
 
+export interface HomeVisitStats {
+  total_visits: number;
+}
+
 export interface AdminApplicationCreatePayload {
   reason: string;
 }

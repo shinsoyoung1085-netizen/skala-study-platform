@@ -42,3 +42,19 @@ def test_member_stats_counts_by_campus(client):
 def test_member_stats_requires_authentication(client):
     res = client.get("/api/stats/members")
     assert res.status_code == 401
+
+
+def test_home_visit_ping_increments_total(client):
+    headers = _signup_and_login(client, username="visitor1", skala_id="SKALA-V1", campus="PANGYO")
+
+    first = client.post("/api/stats/visits/ping", headers=headers)
+    assert first.status_code == 200
+    assert first.json()["total_visits"] == 1
+
+    second = client.post("/api/stats/visits/ping", headers=headers)
+    assert second.json()["total_visits"] == 2
+
+
+def test_home_visit_ping_requires_authentication(client):
+    res = client.post("/api/stats/visits/ping")
+    assert res.status_code == 401

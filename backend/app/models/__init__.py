@@ -8,6 +8,7 @@ from app.models.recommendation import LeaderRecommendation, RecommendationCooldo
 from app.models.update import Update  # noqa: F401
 from app.models.message import StudyMessage  # noqa: F401
 from app.models.admin_application import AdminApplication  # noqa: F401
+from app.models.site_visit import HomeVisitCounter  # noqa: F401
 
 __all__ = [
     "User",
@@ -20,4 +21,5 @@ __all__ = [
     "Update",
     "StudyMessage",
     "AdminApplication",
+    "HomeVisitCounter",
 ]

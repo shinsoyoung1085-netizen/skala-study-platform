@@ -13,3 +13,7 @@ class CampusCount(BaseModel):
 class MemberStatsResponse(BaseModel):
     total_members: int
     campus_counts: list[CampusCount]
+
+
+class HomeVisitResponse(BaseModel):
+    total_visits: int

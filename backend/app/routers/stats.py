@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.dependencies import get_current_user
 from app.models.enums import CAMPUS_LABELS
+from app.models.site_visit import HomeVisitCounter
 from app.models.user import User
-from app.schemas.stats import CampusCount, MemberStatsResponse
+from app.schemas.stats import CampusCount, HomeVisitResponse, MemberStatsResponse
 
 router = APIRouter(prefix="/api/stats", tags=["통계"])
 
@@ -30,3 +31,18 @@ def get_member_stats(
     ]
 
     return MemberStatsResponse(total_members=total, campus_counts=campus_counts)
+
+
+@router.post("/visits/ping", response_model=HomeVisitResponse, summary="홈 화면 방문수 1 증가")
+def ping_home_visit(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    counter = db.get(HomeVisitCounter, 1)
+    if counter is None:
+        counter = HomeVisitCounter(id=1, total_visits=0)
+        db.add(counter)
+    counter.total_visits += 1
+    db.commit()
+    db.refresh(counter)
+    return HomeVisitResponse(total_visits=counter.total_visits)
