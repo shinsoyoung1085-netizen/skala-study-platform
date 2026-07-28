@@ -1,17 +1,21 @@
 """
 관리자 전용 API: 회원/스터디 목록 조회 및 삭제.
 """
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.database import get_db
-from app.dependencies import get_current_admin
-from app.models.enums import RECOMMENDATION_TAG_LABELS
+from app.dependencies import get_current_admin, get_current_main_admin
+from app.models.admin_application import AdminApplication
+from app.models.enums import APPLICATION_STATUS_LABELS, RECOMMENDATION_TAG_LABELS, ApplicationStatus
 from app.models.recommendation import LeaderRecommendation
 from app.models.study import Study
 from app.models.update import Update
 from app.models.user import User
+from app.schemas.admin_application import AdminApplicationAdminItem
 from app.schemas.recommendation import AdminRecommendationLogItem
 from app.schemas.study import StudyListResponse
 from app.schemas.update import UpdateCreateRequest, UpdateEditRequest, UpdateResponse
@@ -32,6 +36,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "회원을 찾을 수 없습니다.")
+    if user.is_main_admin:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "메인 관리자 계정은 삭제할 수 없습니다.")
     db.delete(user)
     db.commit()
     return {"message": "회원이 삭제되었습니다."}
@@ -139,3 +145,85 @@ def delete_update(update_id: int, db: Session = Depends(get_db)):
     db.delete(update)
     db.commit()
     return {"message": "업데이트 공지가 삭제되었습니다."}
+
+
+def _to_application_admin_item(application: AdminApplication) -> AdminApplicationAdminItem:
+    return AdminApplicationAdminItem(
+        id=application.id,
+        applicant_name=application.user.name,
+        applicant_username=application.user.username,
+        reason=application.reason,
+        status=application.status,
+        status_label=APPLICATION_STATUS_LABELS.get(application.status, application.status),
+        created_at=application.created_at,
+        reviewed_at=application.reviewed_at,
+        reviewed_by_name=application.reviewed_by.name if application.reviewed_by else None,
+    )
+
+
+@router.get(
+    "/admin-applications",
+    response_model=list[AdminApplicationAdminItem],
+    summary="[관리자] 관리자 권한 신청 목록 조회",
+)
+def list_admin_applications(db: Session = Depends(get_db)):
+    query = (
+        select(AdminApplication)
+        .options(selectinload(AdminApplication.user), selectinload(AdminApplication.reviewed_by))
+        .order_by(AdminApplication.created_at.desc())
+    )
+    applications = db.scalars(query).all()
+    return [_to_application_admin_item(a) for a in applications]
+
+
+@router.post(
+    "/admin-applications/{application_id}/approve",
+    response_model=AdminApplicationAdminItem,
+    summary="[메인 관리자 전용] 관리자 권한 신청 승인 (승인 시 부관리자로 전환)",
+)
+def approve_admin_application(
+    application_id: int,
+    current_user: User = Depends(get_current_main_admin),
+    db: Session = Depends(get_db),
+):
+    application = db.get(AdminApplication, application_id)
+    if application is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "신청 내역을 찾을 수 없습니다.")
+    if application.status != ApplicationStatus.PENDING.value:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 처리된 신청입니다.")
+
+    applicant = db.get(User, application.user_id)
+    applicant.is_admin = True  # 승인된 신청자는 부관리자(is_main_admin=False)가 된다.
+
+    application.status = ApplicationStatus.APPROVED.value
+    application.reviewed_at = datetime.now(timezone.utc)
+    application.reviewed_by_id = current_user.id
+
+    db.commit()
+    db.refresh(application)
+    return _to_application_admin_item(application)
+
+
+@router.post(
+    "/admin-applications/{application_id}/reject",
+    response_model=AdminApplicationAdminItem,
+    summary="[메인 관리자 전용] 관리자 권한 신청 거절",
+)
+def reject_admin_application(
+    application_id: int,
+    current_user: User = Depends(get_current_main_admin),
+    db: Session = Depends(get_db),
+):
+    application = db.get(AdminApplication, application_id)
+    if application is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "신청 내역을 찾을 수 없습니다.")
+    if application.status != ApplicationStatus.PENDING.value:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 처리된 신청입니다.")
+
+    application.status = ApplicationStatus.REJECTED.value
+    application.reviewed_at = datetime.now(timezone.utc)
+    application.reviewed_by_id = current_user.id
+
+    db.commit()
+    db.refresh(application)
+    return _to_application_admin_item(application)

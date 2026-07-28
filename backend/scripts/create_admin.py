@@ -22,8 +22,9 @@ def create_admin(name: str, username: str, email: str, password: str, skala_id: 
         existing = db.query(User).filter(User.username == username).first()
         if existing:
             existing.is_admin = True
+            existing.is_main_admin = True
             db.commit()
-            print(f"기존 회원 '{username}'을(를) 관리자로 승격했습니다.")
+            print(f"기존 회원 '{username}'을(를) 메인 관리자로 승격했습니다.")
             return
 
         admin = User(
@@ -32,11 +33,13 @@ def create_admin(name: str, username: str, email: str, password: str, skala_id: 
             email=email,
             hashed_password=hash_password(password),
             skala_id=skala_id,
+            campus="PANGYO",
             is_admin=True,
+            is_main_admin=True,
         )
         db.add(admin)
         db.commit()
-        print(f"관리자 계정 '{username}'이(가) 생성되었습니다.")
+        print(f"메인 관리자 계정 '{username}'이(가) 생성되었습니다.")
     finally:
         db.close()
 

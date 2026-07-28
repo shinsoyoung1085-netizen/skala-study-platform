@@ -21,6 +21,9 @@ class User(Base):
     skala_id: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
     campus: Mapped[str] = mapped_column(String(20), nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # 메인 관리자(최초 관리자) 여부. 관리자 신청 승인 등 민감한 작업은 메인 관리자만 할 수 있다.
+    # 신청 승인으로 관리자가 된 회원은 is_admin=True, is_main_admin=False (부관리자)로 남는다.
+    is_main_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # 익명 모임장 추천으로 적립되는 소액 포인트 누적값
     points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

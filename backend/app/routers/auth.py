@@ -79,6 +79,7 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         campus=user.campus,
         campus_label=user.campus_label,
         is_admin=user.is_admin,
+        is_main_admin=user.is_main_admin,
         interests=[i.interest for i in user.interests],
         joined_study_count=0,
         points=user.points,

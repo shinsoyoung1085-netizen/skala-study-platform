@@ -61,6 +61,14 @@ class UpdateCategory(str, Enum):
     NOTICE = "NOTICE"
 
 
+class ApplicationStatus(str, Enum):
+    """관리자 권한 신청의 심사 상태."""
+
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
 # 프론트엔드 표시용 한글 라벨 매핑 (API 응답에서 label로 함께 내려줄 때 사용)
 CATEGORY_LABELS: dict[str, str] = {
     CategoryCode.OPIC: "OPIC",
@@ -114,4 +122,10 @@ UPDATE_CATEGORY_LABELS: dict[str, str] = {
     UpdateCategory.BUGFIX: "버그 수정",
     UpdateCategory.IMPROVEMENT: "개선 사항",
     UpdateCategory.NOTICE: "공지",
+}
+
+APPLICATION_STATUS_LABELS: dict[str, str] = {
+    ApplicationStatus.PENDING: "심사중",
+    ApplicationStatus.APPROVED: "승인됨",
+    ApplicationStatus.REJECTED: "거절됨",
 }

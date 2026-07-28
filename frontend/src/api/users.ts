@@ -1,5 +1,7 @@
 import { apiClient } from "@/api/client";
 import type {
+  AdminApplication,
+  AdminApplicationCreatePayload,
   ChangePasswordPayload,
   DeleteAccountPayload,
   MyPointsResponse,
@@ -27,5 +29,15 @@ export async function deleteMyAccount(payload: DeleteAccountPayload): Promise<vo
 
 export async function fetchMyPoints(): Promise<MyPointsResponse> {
   const { data } = await apiClient.get<MyPointsResponse>("/api/users/me/points");
+  return data;
+}
+
+export async function applyForAdmin(payload: AdminApplicationCreatePayload): Promise<AdminApplication> {
+  const { data } = await apiClient.post<AdminApplication>("/api/users/me/admin-application", payload);
+  return data;
+}
+
+export async function fetchMyAdminApplication(): Promise<AdminApplication | null> {
+  const { data } = await apiClient.get<AdminApplication | null>("/api/users/me/admin-application");
   return data;
 }

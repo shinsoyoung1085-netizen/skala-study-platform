@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 
-import { changeMyPassword, deleteMyAccount, updateMyProfile } from "@/api/users";
+import { applyForAdmin, changeMyPassword, deleteMyAccount, fetchMyAdminApplication, updateMyProfile } from "@/api/users";
 import { clearStoredToken, extractErrorMessage } from "@/api/client";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
@@ -12,6 +12,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { CAMPUS_OPTIONS } from "@/constants/campusOptions";
 import { INTEREST_LABELS } from "@/constants/interestGroups";
 import { useAuth } from "@/hooks/useAuth";
+import type { AdminApplication } from "@/types";
 
 /** 마이페이지: 프로필 조회, 계정 정보(아이디/이메일/캠퍼스) 수정, 비밀번호 변경을 제공한다. */
 export function MyPage() {
@@ -35,6 +36,11 @@ export function MyPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [adminApplication, setAdminApplication] = useState<AdminApplication | null>(null);
+  const [applicationReason, setApplicationReason] = useState("");
+  const [applicationError, setApplicationError] = useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
+
   // 로그인한 회원 정보가 (처음) 로딩되거나 저장 후 갱신되면 수정 폼 값도 최신 상태로 맞춘다.
   useEffect(() => {
     if (user) {
@@ -44,7 +50,34 @@ export function MyPage() {
     }
   }, [user]);
 
+  const loadApplication = useCallback(() => {
+    fetchMyAdminApplication()
+      .then(setAdminApplication)
+      .catch(() => setAdminApplication(null));
+  }, []);
+
+  useEffect(() => {
+    if (user && !user.is_admin) {
+      loadApplication();
+    }
+  }, [user, loadApplication]);
+
   if (!user) return <Spinner />;
+
+  const handleApplyForAdmin = async (e: FormEvent) => {
+    e.preventDefault();
+    setApplicationError(null);
+    setIsApplying(true);
+    try {
+      const application = await applyForAdmin({ reason: applicationReason });
+      setAdminApplication(application);
+      setApplicationReason("");
+    } catch (err) {
+      setApplicationError(extractErrorMessage(err, "관리자 신청에 실패했습니다."));
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   const handleProfileSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -120,7 +153,11 @@ export function MyPage() {
               {user.name.charAt(0)}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{user.name}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-gray-900">{user.name}</h2>
+                {user.is_main_admin && <Badge tone="primary">메인 관리자</Badge>}
+                {user.is_admin && !user.is_main_admin && <Badge tone="primary">부관리자</Badge>}
+              </div>
               <p className="text-sm text-gray-500">
                 {user.username} · SKALA {user.skala_id}
               </p>
@@ -220,6 +257,44 @@ export function MyPage() {
             비밀번호 변경
           </Button>
         </form>
+
+        {!user.is_admin && (
+          <div className="card flex flex-col gap-4">
+            <div>
+              <h3 className="text-base font-bold text-gray-900">관리자 신청</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                신청하시면 메인 관리자의 승인 후 부관리자 권한이 부여됩니다.
+              </p>
+            </div>
+
+            {applicationError && <Alert>{applicationError}</Alert>}
+
+            {adminApplication?.status === "PENDING" ? (
+              <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                <Badge tone="neutral">심사중</Badge>
+                <p className="mt-2 whitespace-pre-wrap">{adminApplication.reason || "(사유 없음)"}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleApplyForAdmin} className="flex flex-col gap-4">
+                {adminApplication?.status === "REJECTED" && (
+                  <Alert tone="info">이전 신청이 거절되었습니다. 다시 신청할 수 있어요.</Alert>
+                )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-gray-700">신청 사유 (선택)</label>
+                  <textarea
+                    className="min-h-[80px] w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
+                    value={applicationReason}
+                    onChange={(e) => setApplicationReason(e.target.value)}
+                    placeholder="스터디 운영을 돕고 싶은 이유 등을 적어주세요"
+                  />
+                </div>
+                <Button type="submit" variant="outline" isLoading={isApplying}>
+                  관리자 신청하기
+                </Button>
+              </form>
+            )}
+          </div>
+        )}
 
         <div className="card flex flex-col gap-4 border-red-100">
           <div>

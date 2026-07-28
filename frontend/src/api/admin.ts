@@ -1,5 +1,6 @@
 import { apiClient } from "@/api/client";
 import type {
+  AdminApplicationAdminItem,
   AdminRecommendationLogItem,
   AdminUser,
   StudyListResponse,
@@ -48,4 +49,23 @@ export async function editUpdate(updateId: number, payload: UpdateEditPayload): 
 
 export async function deleteUpdateByAdmin(updateId: number): Promise<void> {
   await apiClient.delete(`/api/admin/updates/${updateId}`);
+}
+
+export async function fetchAdminApplications(): Promise<AdminApplicationAdminItem[]> {
+  const { data } = await apiClient.get<AdminApplicationAdminItem[]>("/api/admin/admin-applications");
+  return data;
+}
+
+export async function approveAdminApplication(applicationId: number): Promise<AdminApplicationAdminItem> {
+  const { data } = await apiClient.post<AdminApplicationAdminItem>(
+    `/api/admin/admin-applications/${applicationId}/approve`,
+  );
+  return data;
+}
+
+export async function rejectAdminApplication(applicationId: number): Promise<AdminApplicationAdminItem> {
+  const { data } = await apiClient.post<AdminApplicationAdminItem>(
+    `/api/admin/admin-applications/${applicationId}/reject`,
+  );
+  return data;
 }

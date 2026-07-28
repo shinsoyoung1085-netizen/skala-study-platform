@@ -8,10 +8,12 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.security import hash_password, verify_password
 from app.db.database import get_db
 from app.dependencies import get_current_user
-from app.models.enums import RECOMMENDATION_TAG_LABELS
+from app.models.admin_application import AdminApplication
+from app.models.enums import APPLICATION_STATUS_LABELS, RECOMMENDATION_TAG_LABELS, ApplicationStatus
 from app.models.recommendation import LeaderRecommendation
 from app.models.study import StudyMember
 from app.models.user import User
+from app.schemas.admin_application import AdminApplicationCreateRequest, AdminApplicationResponse
 from app.schemas.recommendation import MyPointsResponse, ReceivedRecommendationItem
 from app.schemas.user import (
     ChangePasswordRequest,
@@ -36,6 +38,7 @@ def _build_profile_response(user: User, db: Session) -> UserProfileResponse:
         campus=user.campus,
         campus_label=user.campus_label,
         is_admin=user.is_admin,
+        is_main_admin=user.is_main_admin,
         interests=[i.interest for i in user.interests],
         joined_study_count=joined_study_count or 0,
         points=user.points,
@@ -91,6 +94,65 @@ def change_my_password(
     current_user.hashed_password = hash_password(payload.new_password)
     db.commit()
     return {"message": "비밀번호가 변경되었습니다."}
+
+
+def _to_application_response(application: AdminApplication) -> AdminApplicationResponse:
+    return AdminApplicationResponse(
+        id=application.id,
+        reason=application.reason,
+        status=application.status,
+        status_label=APPLICATION_STATUS_LABELS.get(application.status, application.status),
+        created_at=application.created_at,
+        reviewed_at=application.reviewed_at,
+    )
+
+
+@router.post(
+    "/me/admin-application",
+    response_model=AdminApplicationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="관리자 권한 신청 (메인 관리자 승인 후 부관리자로 전환)",
+)
+def apply_for_admin(
+    payload: AdminApplicationCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.is_admin:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 관리자입니다.")
+
+    existing_pending = db.scalar(
+        select(AdminApplication).where(
+            AdminApplication.user_id == current_user.id,
+            AdminApplication.status == ApplicationStatus.PENDING.value,
+        )
+    )
+    if existing_pending is not None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 심사중인 신청이 있습니다.")
+
+    application = AdminApplication(user_id=current_user.id, reason=payload.reason)
+    db.add(application)
+    db.commit()
+    db.refresh(application)
+    return _to_application_response(application)
+
+
+@router.get(
+    "/me/admin-application",
+    response_model=AdminApplicationResponse | None,
+    summary="내 관리자 신청 현황 조회 (가장 최근 1건)",
+)
+def get_my_admin_application(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    application = db.scalar(
+        select(AdminApplication)
+        .where(AdminApplication.user_id == current_user.id)
+        .order_by(AdminApplication.created_at.desc())
+        .limit(1)
+    )
+    return _to_application_response(application) if application else None
 
 
 @router.get("/me/points", response_model=MyPointsResponse, summary="내 포인트 및 익명 칭찬 내역 조회")

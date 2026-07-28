@@ -7,6 +7,7 @@ import {
   fetchAllUsers,
 } from "@/api/admin";
 import { extractErrorMessage } from "@/api/client";
+import { AdminApplicationsPanel } from "@/components/admin/AdminApplicationsPanel";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { LeaderPointsPanel } from "@/components/admin/LeaderPointsPanel";
 import { UpdateManagementPanel } from "@/components/admin/UpdateManagementPanel";
@@ -17,7 +18,7 @@ import { Spinner } from "@/components/common/Spinner";
 import { PageContainer } from "@/components/layout/PageContainer";
 import type { AdminUser, Study } from "@/types";
 
-type Tab = "users" | "studies" | "points" | "updates";
+type Tab = "users" | "studies" | "points" | "updates" | "applications";
 
 /** 관리자 전용 페이지: 회원/스터디 목록 조회 및 삭제 기능만 제공한다. */
 export function AdminPage() {
@@ -104,6 +105,14 @@ export function AdminPage() {
         >
           업데이트 관리
         </button>
+        <button
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            tab === "applications" ? "bg-primary text-white" : "bg-gray-100 text-gray-600"
+          }`}
+          onClick={() => setTab("applications")}
+        >
+          관리자 신청
+        </button>
       </div>
 
       {error && <Alert>{error}</Alert>}
@@ -133,13 +142,21 @@ export function AdminPage() {
                   <td className="py-3 pr-4">{u.skala_id}</td>
                   <td className="py-3 pr-4">{u.campus_label}</td>
                   <td className="py-3 pr-4">
-                    {u.is_admin ? <Badge tone="primary">관리자</Badge> : <Badge>일반회원</Badge>}
+                    {u.is_main_admin ? (
+                      <Badge tone="primary">메인 관리자</Badge>
+                    ) : u.is_admin ? (
+                      <Badge tone="primary">부관리자</Badge>
+                    ) : (
+                      <Badge>일반회원</Badge>
+                    )}
                   </td>
                   <td className="py-3 pr-4">{u.points}P</td>
                   <td className="py-3">
-                    <Button variant="danger" size="sm" onClick={() => handleDeleteUser(u.id)}>
-                      삭제
-                    </Button>
+                    {!u.is_main_admin && (
+                      <Button variant="danger" size="sm" onClick={() => handleDeleteUser(u.id)}>
+                        삭제
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -186,6 +203,8 @@ export function AdminPage() {
       {!isLoading && tab === "points" && <LeaderPointsPanel users={users} />}
 
       {!isLoading && tab === "updates" && <UpdateManagementPanel />}
+
+      {!isLoading && tab === "applications" && <AdminApplicationsPanel />}
     </PageContainer>
   );
 }

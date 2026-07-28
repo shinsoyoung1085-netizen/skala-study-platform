@@ -48,3 +48,13 @@ def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
             detail="관리자만 접근할 수 있습니다.",
         )
     return current_user
+
+
+def get_current_main_admin(current_user: User = Depends(get_current_admin)) -> User:
+    """메인 관리자만 수행할 수 있는 민감한 작업(관리자 신청 승인/거절 등)에서 사용하는 의존성."""
+    if not current_user.is_main_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="메인 관리자만 처리할 수 있습니다.",
+        )
+    return current_user

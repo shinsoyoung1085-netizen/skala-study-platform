@@ -21,6 +21,7 @@ export interface UserProfile {
   campus: string;
   campus_label: string;
   is_admin: boolean;
+  is_main_admin: boolean;
   interests: string[];
   joined_study_count: number;
   points: number;
@@ -36,6 +37,7 @@ export interface AdminUser {
   campus: string;
   campus_label: string;
   is_admin: boolean;
+  is_main_admin: boolean;
   points: number;
   created_at: string;
 }
@@ -213,4 +215,29 @@ export interface CampusCount {
 export interface MemberStats {
   total_members: number;
   campus_counts: CampusCount[];
+}
+
+export interface AdminApplicationCreatePayload {
+  reason: string;
+}
+
+export interface AdminApplication {
+  id: number;
+  reason: string;
+  status: string;
+  status_label: string;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface AdminApplicationAdminItem {
+  id: number;
+  applicant_name: string;
+  applicant_username: string;
+  reason: string;
+  status: string;
+  status_label: string;
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by_name: string | null;
 }
