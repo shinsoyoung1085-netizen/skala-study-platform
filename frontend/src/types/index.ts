@@ -203,3 +203,14 @@ export interface ChatMessage {
 export interface SendMessagePayload {
   content: string;
 }
+
+export interface CampusCount {
+  code: string;
+  label: string;
+  count: number;
+}
+
+export interface MemberStats {
+  total_members: number;
+  campus_counts: CampusCount[];
+}

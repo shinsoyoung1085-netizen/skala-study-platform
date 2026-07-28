@@ -5,6 +5,7 @@ import { fetchLatestUpdate } from "@/api/updates";
 import { Button } from "@/components/common/Button";
 import { UpdateNoticeModal } from "@/components/common/UpdateNoticeModal";
 import { FeatureShowcase } from "@/components/home/FeatureShowcase";
+import { MemberStatsBar } from "@/components/home/MemberStatsBar";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuth } from "@/hooks/useAuth";
 import type { UpdateNotice } from "@/types";
@@ -43,6 +44,8 @@ export function HomePage() {
         </div>
         <Button onClick={() => navigate("/studies")}>스터디 둘러보기</Button>
       </section>
+
+      <MemberStatsBar />
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <button
