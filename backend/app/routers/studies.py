@@ -18,9 +18,11 @@ from app.models.enums import (
     DayOfWeek,
     Location,
 )
+from app.models.message import StudyMessage
 from app.models.recommendation import LeaderRecommendation, RecommendationCooldown
 from app.models.study import Study, StudyDay, StudyMember
 from app.models.user import User
+from app.schemas.message import MessageCreateRequest, MessageResponse
 from app.schemas.recommendation import RecommendLeaderRequest, RecommendLeaderResponse
 from app.schemas.study import StudyCreateRequest, StudyListResponse, StudyMemberResponse, StudyResponse
 from app.utils.study_mapper import to_study_response
@@ -162,6 +164,78 @@ def list_study_members(
         )
         for m in members_sorted
     ]
+
+
+def _require_member(study: Study, current_user: User) -> None:
+    member_ids = {m.user_id for m in study.members}
+    if current_user.id not in member_ids:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "스터디 참여자만 채팅을 이용할 수 있습니다.")
+
+
+@router.get(
+    "/{study_id}/messages",
+    response_model=list[MessageResponse],
+    summary="스터디 채팅 메시지 목록 조회 (참여자 전용)",
+)
+def list_study_messages(
+    study_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    study = _get_study_or_404(db, study_id)
+    _require_member(study, current_user)
+
+    # 최근 200개만 오래된 순으로 반환 (무한정 쌓이지 않도록 조회 범위 제한)
+    # created_at만으로는 짧은 시간 내 동시 전송 시 정렬이 흔들릴 수 있어 id를 보조 정렬 기준으로 사용한다.
+    rows = db.scalars(
+        select(StudyMessage)
+        .options(selectinload(StudyMessage.user))
+        .where(StudyMessage.study_id == study_id)
+        .order_by(StudyMessage.created_at.desc(), StudyMessage.id.desc())
+        .limit(200)
+    ).all()
+
+    return [
+        MessageResponse(
+            id=m.id,
+            sender_id=m.user_id,
+            sender_name=m.user.name,
+            content=m.content,
+            created_at=m.created_at,
+            is_mine=m.user_id == current_user.id,
+        )
+        for m in reversed(rows)
+    ]
+
+
+@router.post(
+    "/{study_id}/messages",
+    response_model=MessageResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="스터디 채팅 메시지 전송 (참여자 전용)",
+)
+def send_study_message(
+    study_id: int,
+    payload: MessageCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    study = _get_study_or_404(db, study_id)
+    _require_member(study, current_user)
+
+    message = StudyMessage(study_id=study_id, user_id=current_user.id, content=payload.content)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+
+    return MessageResponse(
+        id=message.id,
+        sender_id=current_user.id,
+        sender_name=current_user.name,
+        content=message.content,
+        created_at=message.created_at,
+        is_mine=True,
+    )
 
 
 @router.post(

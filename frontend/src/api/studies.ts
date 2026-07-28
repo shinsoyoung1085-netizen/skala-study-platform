@@ -1,7 +1,9 @@
 import { apiClient } from "@/api/client";
 import type {
+  ChatMessage,
   RecommendLeaderPayload,
   RecommendLeaderResponse,
+  SendMessagePayload,
   Study,
   StudyCreatePayload,
   StudyFilters,
@@ -57,5 +59,18 @@ export async function recommendLeader(
     `/api/studies/${studyId}/recommend-leader`,
     payload,
   );
+  return data;
+}
+
+export async function fetchStudyMessages(studyId: number): Promise<ChatMessage[]> {
+  const { data } = await apiClient.get<ChatMessage[]>(`/api/studies/${studyId}/messages`);
+  return data;
+}
+
+export async function sendStudyMessage(
+  studyId: number,
+  payload: SendMessagePayload,
+): Promise<ChatMessage> {
+  const { data } = await apiClient.post<ChatMessage>(`/api/studies/${studyId}/messages`, payload);
   return data;
 }

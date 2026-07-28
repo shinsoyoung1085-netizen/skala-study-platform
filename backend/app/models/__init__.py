@@ -6,6 +6,7 @@ from app.models.user import User, UserInterest  # noqa: F401
 from app.models.study import Study, StudyDay, StudyMember  # noqa: F401
 from app.models.recommendation import LeaderRecommendation, RecommendationCooldown  # noqa: F401
 from app.models.update import Update  # noqa: F401
+from app.models.message import StudyMessage  # noqa: F401
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "LeaderRecommendation",
     "RecommendationCooldown",
     "Update",
+    "StudyMessage",
 ]

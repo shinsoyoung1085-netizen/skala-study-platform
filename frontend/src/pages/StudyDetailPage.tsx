@@ -17,6 +17,7 @@ import { Spinner } from "@/components/common/Spinner";
 import { Toast } from "@/components/common/Toast";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { RecommendLeaderModal } from "@/components/study/RecommendLeaderModal";
+import { StudyChatSection } from "@/components/study/StudyChatSection";
 import type { Study, StudyMember } from "@/types";
 
 /** 스터디 상세 페이지: 정보 조회, 참여, 탈퇴를 처리한다. 개설자에게는 참여자 목록도 보여준다. */
@@ -199,6 +200,8 @@ export function StudyDetailPage() {
               )}
             </div>
           )}
+
+          <StudyChatSection studyId={study.id} isMember={study.is_joined} />
 
           <div className="flex gap-3">
             {study.is_creator ? (

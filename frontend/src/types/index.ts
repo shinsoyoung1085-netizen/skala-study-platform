@@ -190,3 +190,16 @@ export interface UpdateEditPayload {
   category?: string;
   is_active?: boolean;
 }
+
+export interface ChatMessage {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  content: string;
+  created_at: string;
+  is_mine: boolean;
+}
+
+export interface SendMessagePayload {
+  content: string;
+}
