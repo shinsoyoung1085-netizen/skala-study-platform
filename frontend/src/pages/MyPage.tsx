@@ -143,9 +143,15 @@ export function MyPage() {
             )}
           </div>
 
-          <div className="rounded-xl bg-gray-50 p-4">
-            <p className="text-sm text-gray-500">참여중인 스터디</p>
-            <p className="mt-1 text-2xl font-extrabold text-primary">{user.joined_study_count}개</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">참여중인 스터디</p>
+              <p className="mt-1 text-2xl font-extrabold text-primary">{user.joined_study_count}개</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">모임장 추천 포인트</p>
+              <p className="mt-1 text-2xl font-extrabold text-primary">{user.points}P</p>
+            </div>
           </div>
         </div>
 

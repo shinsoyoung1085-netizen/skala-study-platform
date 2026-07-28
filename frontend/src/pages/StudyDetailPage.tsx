@@ -2,12 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { extractErrorMessage } from "@/api/client";
-import { deleteStudy, fetchStudyDetail, fetchStudyMembers, joinStudy, leaveStudy } from "@/api/studies";
+import {
+  deleteStudy,
+  fetchStudyDetail,
+  fetchStudyMembers,
+  joinStudy,
+  leaveStudy,
+  recommendLeader,
+} from "@/api/studies";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
 import { Spinner } from "@/components/common/Spinner";
+import { Toast } from "@/components/common/Toast";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { RecommendLeaderModal } from "@/components/study/RecommendLeaderModal";
 import type { Study, StudyMember } from "@/types";
 
 /** 스터디 상세 페이지: 정보 조회, 참여, 탈퇴를 처리한다. 개설자에게는 참여자 목록도 보여준다. */
@@ -22,6 +31,9 @@ export function StudyDetailPage() {
 
   const [members, setMembers] = useState<StudyMember[] | null>(null);
   const [membersError, setMembersError] = useState<string | null>(null);
+
+  const [isRecommendModalOpen, setIsRecommendModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!studyId) return;
@@ -82,6 +94,18 @@ export function StudyDetailPage() {
     }
   };
 
+  const handleRecommend = async (reasonTag: string) => {
+    if (!study) return;
+    try {
+      const res = await recommendLeader(study.id, { reason_tag: reasonTag });
+      setIsRecommendModalOpen(false);
+      setToastMessage(`익명으로 모임장님께 ${res.points_given}P와 칭찬 메시지를 전달했습니다! 🎉`);
+    } catch (err) {
+      setIsRecommendModalOpen(false);
+      setError(extractErrorMessage(err, "모임장 추천에 실패했습니다."));
+    }
+  };
+
   const handleDelete = async () => {
     if (!study) return;
     if (!window.confirm("정말 이 스터디를 삭제하시겠습니까? 참여중인 회원도 모두 함께 빠지게 됩니다.")) return;
@@ -136,6 +160,20 @@ export function StudyDetailPage() {
             </p>
           </div>
 
+          {study.is_joined && !study.is_creator && (
+            <button
+              type="button"
+              onClick={() => setIsRecommendModalOpen(true)}
+              className="flex items-center justify-between rounded-xl border border-primary-100 bg-primary-50 px-4 py-3.5 text-left transition-colors hover:bg-primary-100"
+            >
+              <div>
+                <p className="text-sm font-bold text-primary-700">모임장 추천하기</p>
+                <p className="text-xs text-primary-600">칭찬 태그 하나로 익명 응원과 포인트를 전달해보세요</p>
+              </div>
+              <Badge tone="primary">+50P</Badge>
+            </button>
+          )}
+
           {study.is_creator && (
             <div>
               <h2 className="mb-2 text-sm font-semibold text-gray-700">참여자 목록 (개설자만 볼 수 있어요)</h2>
@@ -179,6 +217,12 @@ export function StudyDetailPage() {
           </div>
         </div>
       )}
+
+      {isRecommendModalOpen && (
+        <RecommendLeaderModal onClose={() => setIsRecommendModalOpen(false)} onSelect={handleRecommend} />
+      )}
+
+      {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
     </PageContainer>
   );
 }

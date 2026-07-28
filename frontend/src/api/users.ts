@@ -1,5 +1,11 @@
 import { apiClient } from "@/api/client";
-import type { ChangePasswordPayload, DeleteAccountPayload, UpdateProfilePayload, UserProfile } from "@/types";
+import type {
+  ChangePasswordPayload,
+  DeleteAccountPayload,
+  MyPointsResponse,
+  UpdateProfilePayload,
+  UserProfile,
+} from "@/types";
 
 export async function fetchMyProfile(): Promise<UserProfile> {
   const { data } = await apiClient.get<UserProfile>("/api/users/me");
@@ -17,4 +23,9 @@ export async function changeMyPassword(payload: ChangePasswordPayload): Promise<
 
 export async function deleteMyAccount(payload: DeleteAccountPayload): Promise<void> {
   await apiClient.delete("/api/users/me", { data: payload });
+}
+
+export async function fetchMyPoints(): Promise<MyPointsResponse> {
+  const { data } = await apiClient.get<MyPointsResponse>("/api/users/me/points");
+  return data;
 }

@@ -71,6 +71,7 @@ class UserProfileResponse(BaseModel):
     is_admin: bool
     interests: list[str]
     joined_study_count: int
+    points: int = Field(description="모임장 익명 추천으로 적립된 누적 포인트")
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -115,6 +116,7 @@ class AdminUserResponse(BaseModel):
     campus: str
     campus_label: str
     is_admin: bool
+    points: int
     created_at: datetime
 
     model_config = {"from_attributes": True}

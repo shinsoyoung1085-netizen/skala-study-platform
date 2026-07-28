@@ -1,5 +1,5 @@
 import { apiClient } from "@/api/client";
-import type { AdminUser, StudyListResponse } from "@/types";
+import type { AdminRecommendationLogItem, AdminUser, StudyListResponse } from "@/types";
 
 export async function fetchAllUsers(): Promise<AdminUser[]> {
   const { data } = await apiClient.get<AdminUser[]>("/api/admin/users");
@@ -17,4 +17,9 @@ export async function deleteUserByAdmin(userId: number): Promise<void> {
 
 export async function deleteStudyByAdmin(studyId: number): Promise<void> {
   await apiClient.delete(`/api/admin/studies/${studyId}`);
+}
+
+export async function fetchLeaderRecommendations(): Promise<AdminRecommendationLogItem[]> {
+  const { data } = await apiClient.get<AdminRecommendationLogItem[]>("/api/admin/leader-recommendations");
+  return data;
 }

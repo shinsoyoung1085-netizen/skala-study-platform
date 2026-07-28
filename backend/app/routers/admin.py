@@ -7,8 +7,11 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db.database import get_db
 from app.dependencies import get_current_admin
+from app.models.enums import RECOMMENDATION_TAG_LABELS
+from app.models.recommendation import LeaderRecommendation
 from app.models.study import Study
 from app.models.user import User
+from app.schemas.recommendation import AdminRecommendationLogItem
 from app.schemas.study import StudyListResponse
 from app.schemas.user import AdminUserResponse
 from app.utils.study_mapper import to_study_response
@@ -50,3 +53,30 @@ def delete_study(study_id: int, db: Session = Depends(get_db)):
     db.delete(study)
     db.commit()
     return {"message": "스터디가 삭제되었습니다."}
+
+
+@router.get(
+    "/leader-recommendations",
+    response_model=list[AdminRecommendationLogItem],
+    summary="[관리자] 모임장 추천/포인트 지급 내역 (추천자 정보는 포함되지 않음)",
+)
+def list_leader_recommendations(db: Session = Depends(get_db)):
+    query = (
+        select(LeaderRecommendation)
+        .options(selectinload(LeaderRecommendation.leader), selectinload(LeaderRecommendation.study))
+        .order_by(LeaderRecommendation.created_at.desc())
+    )
+    rows = db.scalars(query).all()
+    return [
+        AdminRecommendationLogItem(
+            id=r.id,
+            leader_name=r.leader.name,
+            leader_username=r.leader.username,
+            study_name=r.study.name,
+            points_given=r.points_given,
+            reason_tag=r.reason_tag,
+            reason_label=RECOMMENDATION_TAG_LABELS.get(r.reason_tag, r.reason_tag),
+            created_at=r.created_at,
+        )
+        for r in rows
+    ]

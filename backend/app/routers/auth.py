@@ -81,6 +81,7 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         is_admin=user.is_admin,
         interests=[i.interest for i in user.interests],
         joined_study_count=0,
+        points=user.points,
         created_at=user.created_at,
     )
 

@@ -8,6 +8,7 @@ import {
 } from "@/api/admin";
 import { extractErrorMessage } from "@/api/client";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { LeaderPointsPanel } from "@/components/admin/LeaderPointsPanel";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -15,7 +16,7 @@ import { Spinner } from "@/components/common/Spinner";
 import { PageContainer } from "@/components/layout/PageContainer";
 import type { AdminUser, Study } from "@/types";
 
-type Tab = "users" | "studies";
+type Tab = "users" | "studies" | "points";
 
 /** 관리자 전용 페이지: 회원/스터디 목록 조회 및 삭제 기능만 제공한다. */
 export function AdminPage() {
@@ -86,6 +87,14 @@ export function AdminPage() {
         >
           스터디 목록
         </button>
+        <button
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            tab === "points" ? "bg-primary text-white" : "bg-gray-100 text-gray-600"
+          }`}
+          onClick={() => setTab("points")}
+        >
+          리더 포인트
+        </button>
       </div>
 
       {error && <Alert>{error}</Alert>}
@@ -102,6 +111,7 @@ export function AdminPage() {
                 <th className="py-2 pr-4">SKALA 고유번호</th>
                 <th className="py-2 pr-4">캠퍼스</th>
                 <th className="py-2 pr-4">권한</th>
+                <th className="py-2 pr-4">포인트</th>
                 <th className="py-2"></th>
               </tr>
             </thead>
@@ -116,6 +126,7 @@ export function AdminPage() {
                   <td className="py-3 pr-4">
                     {u.is_admin ? <Badge tone="primary">관리자</Badge> : <Badge>일반회원</Badge>}
                   </td>
+                  <td className="py-3 pr-4">{u.points}P</td>
                   <td className="py-3">
                     <Button variant="danger" size="sm" onClick={() => handleDeleteUser(u.id)}>
                       삭제
@@ -162,6 +173,8 @@ export function AdminPage() {
           </table>
         </div>
       )}
+
+      {!isLoading && tab === "points" && <LeaderPointsPanel users={users} />}
     </PageContainer>
   );
 }

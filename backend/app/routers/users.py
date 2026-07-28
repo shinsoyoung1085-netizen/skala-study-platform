@@ -3,13 +3,16 @@
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import hash_password, verify_password
 from app.db.database import get_db
 from app.dependencies import get_current_user
+from app.models.enums import RECOMMENDATION_TAG_LABELS
+from app.models.recommendation import LeaderRecommendation
 from app.models.study import StudyMember
 from app.models.user import User
+from app.schemas.recommendation import MyPointsResponse, ReceivedRecommendationItem
 from app.schemas.user import (
     ChangePasswordRequest,
     DeleteAccountRequest,
@@ -35,6 +38,7 @@ def _build_profile_response(user: User, db: Session) -> UserProfileResponse:
         is_admin=user.is_admin,
         interests=[i.interest for i in user.interests],
         joined_study_count=joined_study_count or 0,
+        points=user.points,
         created_at=user.created_at,
     )
 
@@ -87,6 +91,33 @@ def change_my_password(
     current_user.hashed_password = hash_password(payload.new_password)
     db.commit()
     return {"message": "비밀번호가 변경되었습니다."}
+
+
+@router.get("/me/points", response_model=MyPointsResponse, summary="내 포인트 및 익명 칭찬 내역 조회")
+def get_my_points(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    rows = db.scalars(
+        select(LeaderRecommendation)
+        .options(selectinload(LeaderRecommendation.study))
+        .where(LeaderRecommendation.leader_id == current_user.id)
+        .order_by(LeaderRecommendation.created_at.desc())
+    ).all()
+
+    return MyPointsResponse(
+        points=current_user.points,
+        recommendations_received=[
+            ReceivedRecommendationItem(
+                study_name=r.study.name,
+                reason_tag=r.reason_tag,
+                reason_label=RECOMMENDATION_TAG_LABELS.get(r.reason_tag, r.reason_tag),
+                points_given=r.points_given,
+                created_at=r.created_at,
+            )
+            for r in rows
+        ],
+    )
 
 
 @router.delete("/me", summary="회원 탈퇴")

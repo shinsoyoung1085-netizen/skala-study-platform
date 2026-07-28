@@ -1,5 +1,13 @@
 import { apiClient } from "@/api/client";
-import type { Study, StudyCreatePayload, StudyFilters, StudyListResponse, StudyMember } from "@/types";
+import type {
+  RecommendLeaderPayload,
+  RecommendLeaderResponse,
+  Study,
+  StudyCreatePayload,
+  StudyFilters,
+  StudyListResponse,
+  StudyMember,
+} from "@/types";
 
 export async function fetchStudies(filters: StudyFilters): Promise<StudyListResponse> {
   const { data } = await apiClient.get<StudyListResponse>("/api/studies", {
@@ -38,5 +46,16 @@ export async function deleteStudy(studyId: number): Promise<void> {
 
 export async function fetchStudyMembers(studyId: number): Promise<StudyMember[]> {
   const { data } = await apiClient.get<StudyMember[]>(`/api/studies/${studyId}/members`);
+  return data;
+}
+
+export async function recommendLeader(
+  studyId: number,
+  payload: RecommendLeaderPayload,
+): Promise<RecommendLeaderResponse> {
+  const { data } = await apiClient.post<RecommendLeaderResponse>(
+    `/api/studies/${studyId}/recommend-leader`,
+    payload,
+  );
   return data;
 }

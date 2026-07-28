@@ -23,6 +23,7 @@ export interface UserProfile {
   is_admin: boolean;
   interests: string[];
   joined_study_count: number;
+  points: number;
   created_at: string;
 }
 
@@ -35,6 +36,7 @@ export interface AdminUser {
   campus: string;
   campus_label: string;
   is_admin: boolean;
+  points: number;
   created_at: string;
 }
 
@@ -126,4 +128,38 @@ export interface StudyFilters {
   location?: string;
   is_online?: boolean;
   campus?: string;
+}
+
+export interface RecommendLeaderPayload {
+  reason_tag: string;
+}
+
+export interface RecommendLeaderResponse {
+  message: string;
+  points_given: number;
+  reason_label: string;
+}
+
+export interface ReceivedRecommendation {
+  study_name: string;
+  reason_tag: string;
+  reason_label: string;
+  points_given: number;
+  created_at: string;
+}
+
+export interface MyPointsResponse {
+  points: number;
+  recommendations_received: ReceivedRecommendation[];
+}
+
+export interface AdminRecommendationLogItem {
+  id: number;
+  leader_name: string;
+  leader_username: string;
+  study_name: string;
+  points_given: number;
+  reason_tag: string;
+  reason_label: string;
+  created_at: string;
 }

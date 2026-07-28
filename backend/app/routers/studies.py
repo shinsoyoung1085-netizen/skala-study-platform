@@ -1,15 +1,27 @@
 """
 스터디 생성/목록/검색/참여/탈퇴 관련 API.
 """
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.database import get_db
 from app.dependencies import get_current_user
-from app.models.enums import Campus, CategoryCode, DayOfWeek, Location
+from app.models.enums import (
+    RECOMMENDATION_COOLDOWN_HOURS,
+    RECOMMENDATION_POINTS,
+    RECOMMENDATION_TAG_LABELS,
+    Campus,
+    CategoryCode,
+    DayOfWeek,
+    Location,
+)
+from app.models.recommendation import LeaderRecommendation, RecommendationCooldown
 from app.models.study import Study, StudyDay, StudyMember
 from app.models.user import User
+from app.schemas.recommendation import RecommendLeaderRequest, RecommendLeaderResponse
 from app.schemas.study import StudyCreateRequest, StudyListResponse, StudyMemberResponse, StudyResponse
 from app.utils.study_mapper import to_study_response
 
@@ -150,6 +162,63 @@ def list_study_members(
         )
         for m in members_sorted
     ]
+
+
+@router.post(
+    "/{study_id}/recommend-leader",
+    response_model=RecommendLeaderResponse,
+    summary="모임장 익명 추천 (+포인트)",
+)
+def recommend_leader(
+    study_id: int,
+    payload: RecommendLeaderRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    study = _get_study_or_404(db, study_id)
+    member_ids = {m.user_id for m in study.members}
+
+    if current_user.id not in member_ids:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "스터디 참여자만 모임장을 추천할 수 있습니다.")
+    if current_user.id == study.creator_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "본인이 개설한 스터디는 추천할 수 없습니다.")
+
+    now = datetime.now(timezone.utc)
+    cooldown = db.scalar(
+        select(RecommendationCooldown).where(
+            RecommendationCooldown.user_id == current_user.id,
+            RecommendationCooldown.study_id == study.id,
+        )
+    )
+    if cooldown is not None:
+        # DB에는 timezone 정보 없이 저장될 수 있어 비교 전에 UTC로 맞춰준다.
+        last = cooldown.last_recommended_at
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=timezone.utc)
+        if now - last < timedelta(hours=RECOMMENDATION_COOLDOWN_HOURS):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "이 스터디는 하루에 한 번만 추천할 수 있습니다.")
+        cooldown.last_recommended_at = now
+    else:
+        db.add(RecommendationCooldown(user_id=current_user.id, study_id=study.id, last_recommended_at=now))
+
+    db.add(
+        LeaderRecommendation(
+            leader_id=study.creator_id,
+            study_id=study.id,
+            points_given=RECOMMENDATION_POINTS,
+            reason_tag=payload.reason_tag.value,
+        )
+    )
+    # 리더(개설자)에게 포인트를 적립한다. 익명 추천이므로 누가 줬는지는 어디에도 저장하지 않는다.
+    study.creator.points += RECOMMENDATION_POINTS
+
+    db.commit()
+
+    return RecommendLeaderResponse(
+        message="익명으로 모임장님께 포인트와 칭찬 메시지를 전달했습니다.",
+        points_given=RECOMMENDATION_POINTS,
+        reason_label=RECOMMENDATION_TAG_LABELS[payload.reason_tag.value],
+    )
 
 
 @router.post("/{study_id}/join", response_model=StudyResponse, summary="스터디 참여")

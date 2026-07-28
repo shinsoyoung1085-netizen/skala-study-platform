@@ -44,6 +44,14 @@ class Campus(str, Enum):
     ULSAN = "ULSAN"
 
 
+class RecommendationTag(str, Enum):
+    """모임장 익명 추천 시 선택하는 사전 정의 태그 (자유 텍스트 금지 - 익명성 보호 목적)."""
+
+    KIND = "KIND"
+    LEADERSHIP = "LEADERSHIP"
+    PASSIONATE = "PASSIONATE"
+
+
 # 프론트엔드 표시용 한글 라벨 매핑 (API 응답에서 label로 함께 내려줄 때 사용)
 CATEGORY_LABELS: dict[str, str] = {
     CategoryCode.OPIC: "OPIC",
@@ -79,3 +87,15 @@ CAMPUS_LABELS: dict[str, str] = {
     Campus.GWANGJU: "광주",
     Campus.ULSAN: "울산",
 }
+
+RECOMMENDATION_TAG_LABELS: dict[str, str] = {
+    RecommendationTag.KIND: "친절해요 👏",
+    RecommendationTag.LEADERSHIP: "리더십이 좋아요 👑",
+    RecommendationTag.PASSIONATE: "열정적이에요 🔥",
+}
+
+# 추천 1건당 지급되는 고정 포인트 (인플레이션 방지를 위해 소액으로 고정)
+RECOMMENDATION_POINTS = 50
+
+# 같은 스터디에 대한 추천은 이 시간(시간 단위)마다 1회만 허용
+RECOMMENDATION_COOLDOWN_HOURS = 24
