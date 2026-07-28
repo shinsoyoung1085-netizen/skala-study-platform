@@ -9,6 +9,7 @@ import {
 import { extractErrorMessage } from "@/api/client";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { LeaderPointsPanel } from "@/components/admin/LeaderPointsPanel";
+import { UpdateManagementPanel } from "@/components/admin/UpdateManagementPanel";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -16,7 +17,7 @@ import { Spinner } from "@/components/common/Spinner";
 import { PageContainer } from "@/components/layout/PageContainer";
 import type { AdminUser, Study } from "@/types";
 
-type Tab = "users" | "studies" | "points";
+type Tab = "users" | "studies" | "points" | "updates";
 
 /** 관리자 전용 페이지: 회원/스터디 목록 조회 및 삭제 기능만 제공한다. */
 export function AdminPage() {
@@ -94,6 +95,14 @@ export function AdminPage() {
           onClick={() => setTab("points")}
         >
           리더 포인트
+        </button>
+        <button
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            tab === "updates" ? "bg-primary text-white" : "bg-gray-100 text-gray-600"
+          }`}
+          onClick={() => setTab("updates")}
+        >
+          업데이트 관리
         </button>
       </div>
 
@@ -175,6 +184,8 @@ export function AdminPage() {
       )}
 
       {!isLoading && tab === "points" && <LeaderPointsPanel users={users} />}
+
+      {!isLoading && tab === "updates" && <UpdateManagementPanel />}
     </PageContainer>
   );
 }

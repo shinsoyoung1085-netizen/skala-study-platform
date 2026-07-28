@@ -52,6 +52,15 @@ class RecommendationTag(str, Enum):
     PASSIONATE = "PASSIONATE"
 
 
+class UpdateCategory(str, Enum):
+    """업데이트 공지의 분류."""
+
+    FEATURE = "FEATURE"
+    BUGFIX = "BUGFIX"
+    IMPROVEMENT = "IMPROVEMENT"
+    NOTICE = "NOTICE"
+
+
 # 프론트엔드 표시용 한글 라벨 매핑 (API 응답에서 label로 함께 내려줄 때 사용)
 CATEGORY_LABELS: dict[str, str] = {
     CategoryCode.OPIC: "OPIC",
@@ -99,3 +108,10 @@ RECOMMENDATION_POINTS = 50
 
 # 같은 스터디에 대한 추천은 이 시간(시간 단위)마다 1회만 허용
 RECOMMENDATION_COOLDOWN_HOURS = 24
+
+UPDATE_CATEGORY_LABELS: dict[str, str] = {
+    UpdateCategory.FEATURE: "신규 기능",
+    UpdateCategory.BUGFIX: "버그 수정",
+    UpdateCategory.IMPROVEMENT: "개선 사항",
+    UpdateCategory.NOTICE: "공지",
+}

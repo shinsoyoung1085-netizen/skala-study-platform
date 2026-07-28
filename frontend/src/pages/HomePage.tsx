@@ -1,13 +1,35 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { fetchLatestUpdate } from "@/api/updates";
 import { Button } from "@/components/common/Button";
+import { UpdateNoticeModal } from "@/components/common/UpdateNoticeModal";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuth } from "@/hooks/useAuth";
+import type { UpdateNotice } from "@/types";
+import { dismissUpdateNoticeForToday, shouldShowUpdateNotice } from "@/utils/updateNoticeStorage";
 
 /** 로그인 후 진입하는 홈 화면. */
 export function HomePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [noticeToShow, setNoticeToShow] = useState<UpdateNotice | null>(null);
+
+  useEffect(() => {
+    fetchLatestUpdate().then((update) => {
+      if (update && shouldShowUpdateNotice(update.id)) {
+        setNoticeToShow(update);
+      }
+    });
+  }, []);
+
+  const closeNotice = (dismissForToday: boolean) => {
+    if (noticeToShow && dismissForToday) {
+      dismissUpdateNoticeForToday(noticeToShow.id);
+    }
+    setNoticeToShow(null);
+  };
 
   return (
     <PageContainer>
@@ -35,6 +57,8 @@ export function HomePage() {
           <p className="mt-1 text-sm text-gray-500">참여중인 스터디 목록과 상세 정보를 확인하세요.</p>
         </button>
       </div>
+
+      {noticeToShow && <UpdateNoticeModal update={noticeToShow} onClose={closeNotice} />}
     </PageContainer>
   );
 }

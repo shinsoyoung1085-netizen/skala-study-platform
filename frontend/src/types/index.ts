@@ -163,3 +163,30 @@ export interface AdminRecommendationLogItem {
   reason_label: string;
   created_at: string;
 }
+
+export interface UpdateNotice {
+  id: number;
+  title: string;
+  content: string;
+  version: string | null;
+  category: string;
+  category_label: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface UpdateCreatePayload {
+  title: string;
+  content: string;
+  version?: string | null;
+  category: string;
+  is_active: boolean;
+}
+
+export interface UpdateEditPayload {
+  title?: string;
+  content?: string;
+  version?: string | null;
+  category?: string;
+  is_active?: boolean;
+}
