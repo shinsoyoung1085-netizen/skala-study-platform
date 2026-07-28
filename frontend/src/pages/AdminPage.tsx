@@ -7,6 +7,7 @@ import {
   fetchAllUsers,
 } from "@/api/admin";
 import { extractErrorMessage } from "@/api/client";
+import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -65,6 +66,8 @@ export function AdminPage() {
   return (
     <PageContainer>
       <h1 className="mb-6 text-xl font-extrabold text-gray-900">관리자</h1>
+
+      {!isLoading && !error && <AnalyticsDashboard users={users} studies={studies} />}
 
       <div className="mb-6 flex gap-2">
         <button
