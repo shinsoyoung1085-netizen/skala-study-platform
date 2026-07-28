@@ -1,5 +1,11 @@
 import { apiClient } from "@/api/client";
-import type { LoginPayload, SignupPayload, UserProfile } from "@/types";
+import type {
+  GoogleCompleteSignupPayload,
+  GoogleLoginResponse,
+  LoginPayload,
+  SignupPayload,
+  UserProfile,
+} from "@/types";
 
 export async function signup(payload: SignupPayload): Promise<UserProfile> {
   const { data } = await apiClient.post<UserProfile>("/api/auth/signup", payload);
@@ -37,4 +43,17 @@ export async function checkSkalaId(skalaId: string): Promise<boolean> {
     params: { skala_id: skalaId },
   });
   return data.available;
+}
+
+export async function googleLogin(idToken: string): Promise<GoogleLoginResponse> {
+  const { data } = await apiClient.post<GoogleLoginResponse>("/api/auth/google", { id_token: idToken });
+  return data;
+}
+
+export async function completeGoogleSignup(payload: GoogleCompleteSignupPayload): Promise<string> {
+  const { data } = await apiClient.post<{ access_token: string }>(
+    "/api/auth/google/complete-signup",
+    payload,
+  );
+  return data.access_token;
 }

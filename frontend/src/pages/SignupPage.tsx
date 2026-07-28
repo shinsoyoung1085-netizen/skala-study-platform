@@ -8,6 +8,7 @@ import { Button } from "@/components/common/Button";
 import { Checkbox } from "@/components/common/Checkbox";
 import { Input } from "@/components/common/Input";
 import { Select } from "@/components/common/Select";
+import { GoogleAuthSection } from "@/components/auth/GoogleAuthSection";
 import { CAMPUS_OPTIONS } from "@/constants/campusOptions";
 import { INTEREST_GROUPS } from "@/constants/interestGroups";
 
@@ -130,6 +131,14 @@ export function SignupPage() {
             SKALA <span className="text-primary">STUDY</span> 회원가입
           </h1>
           <p className="mt-1 text-sm text-gray-500">SKALA 교육생만 가입할 수 있어요.</p>
+        </div>
+
+        <GoogleAuthSection onSuccess={() => navigate("/home", { replace: true })} />
+
+        <div className="my-6 flex items-center gap-3 text-xs text-gray-400">
+          <div className="h-px flex-1 bg-gray-100" />
+          또는 아이디로 가입
+          <div className="h-px flex-1 bg-gray-100" />
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

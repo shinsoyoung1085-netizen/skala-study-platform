@@ -17,7 +17,11 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Google 계정으로만 가입한 회원은 비밀번호가 없다 (로그인은 항상 Google로만 가능).
+    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Google 로그인 연동 정보 (구글의 고유 사용자 ID, 프로필 사진)
+    google_id: Mapped[str | None] = mapped_column(String(100), unique=True, index=True, nullable=True)
+    picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     skala_id: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
     campus: Mapped[str] = mapped_column(String(20), nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

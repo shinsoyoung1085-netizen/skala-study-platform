@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Alert } from "@/components/common/Alert";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
+import { GoogleAuthSection } from "@/components/auth/GoogleAuthSection";
 import { extractErrorMessage } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -77,6 +78,14 @@ export function LoginPage() {
             로그인
           </Button>
         </form>
+
+        <div className="my-6 flex items-center gap-3 text-xs text-gray-400">
+          <div className="h-px flex-1 bg-gray-100" />
+          또는
+          <div className="h-px flex-1 bg-gray-100" />
+        </div>
+
+        <GoogleAuthSection onSuccess={() => navigate("/home", { replace: true })} />
 
         <p className="mt-6 text-center text-sm text-gray-500">
           아직 계정이 없으신가요?{" "}

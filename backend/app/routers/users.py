@@ -42,6 +42,8 @@ def _build_profile_response(user: User, db: Session) -> UserProfileResponse:
         interests=[i.interest for i in user.interests],
         joined_study_count=joined_study_count or 0,
         points=user.points,
+        picture_url=user.picture_url,
+        has_password=user.hashed_password is not None,
         created_at=user.created_at,
     )
 
@@ -82,14 +84,17 @@ def update_my_profile(
     return _build_profile_response(current_user, db)
 
 
-@router.post("/me/change-password", summary="비밀번호 변경")
+@router.post("/me/change-password", summary="비밀번호 변경 (구글 전용 계정은 비밀번호 최초 설정)")
 def change_my_password(
     payload: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not verify_password(payload.current_password, current_user.hashed_password):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.")
+    # 구글로만 가입한 회원은 아직 비밀번호가 없으므로, 현재 비밀번호 확인 없이 새로 설정하게 해준다
+    # (이렇게 하면 아이디+비밀번호 로그인도 함께 쓸 수 있게 된다).
+    if current_user.hashed_password is not None:
+        if not verify_password(payload.current_password, current_user.hashed_password):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다.")
 
     current_user.hashed_password = hash_password(payload.new_password)
     db.commit()
@@ -188,8 +193,10 @@ def delete_my_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not verify_password(payload.password, current_user.hashed_password):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "비밀번호가 올바르지 않습니다.")
+    if current_user.hashed_password is not None:
+        if payload.password is None or not verify_password(payload.password, current_user.hashed_password):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "비밀번호가 올바르지 않습니다.")
+    # 구글 전용 계정은 비밀번호가 없으므로 로그인 세션(JWT) 확인만으로 탈퇴를 허용한다.
     if current_user.is_admin:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "관리자 계정은 탈퇴할 수 없습니다. 다른 관리자에게 문의해주세요."

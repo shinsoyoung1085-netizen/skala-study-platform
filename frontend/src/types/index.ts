@@ -25,6 +25,8 @@ export interface UserProfile {
   interests: string[];
   joined_study_count: number;
   points: number;
+  picture_url: string | null;
+  has_password: boolean;
   created_at: string;
 }
 
@@ -240,4 +242,20 @@ export interface AdminApplicationAdminItem {
   created_at: string;
   reviewed_at: string | null;
   reviewed_by_name: string | null;
+}
+
+export interface GoogleLoginResponse {
+  needs_profile_completion: boolean;
+  access_token: string | null;
+  pending_token: string | null;
+  email: string | null;
+  name: string | null;
+  picture: string | null;
+}
+
+export interface GoogleCompleteSignupPayload {
+  pending_token: string;
+  skala_id: string;
+  campus: string;
+  interests: string[];
 }

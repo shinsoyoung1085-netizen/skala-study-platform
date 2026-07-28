@@ -73,6 +73,8 @@ class UserProfileResponse(BaseModel):
     interests: list[str]
     joined_study_count: int
     points: int = Field(description="모임장 익명 추천으로 적립된 누적 포인트")
+    picture_url: str | None = Field(default=None, description="구글 로그인 연동 시 프로필 사진")
+    has_password: bool = Field(description="비밀번호 로그인 사용 가능 여부 (구글 전용 계정은 false)")
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -101,9 +103,9 @@ class ChangePasswordRequest(BaseModel):
 
 
 class DeleteAccountRequest(BaseModel):
-    """회원 탈퇴 요청 바디. 본인 확인을 위해 비밀번호를 다시 입력받는다."""
+    """회원 탈퇴 요청 바디. 비밀번호가 있는 계정은 본인 확인을 위해 비밀번호를 다시 입력받는다."""
 
-    password: str = Field(..., description="현재 비밀번호")
+    password: str | None = Field(default=None, description="현재 비밀번호 (구글 전용 계정은 불필요)")
 
 
 class AdminUserResponse(BaseModel):

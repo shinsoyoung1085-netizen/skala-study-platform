@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
+    # Google 로그인 (GCP OAuth 클라이언트의 "클라이언트 ID". 비밀값이 아니라 프론트에도 노출되는 값이다)
+    GOOGLE_CLIENT_ID: str = ""
+    # Google 신규 가입 시 발급하는 "프로필 입력 대기" 토큰의 만료 시간(분)
+    GOOGLE_PENDING_SIGNUP_EXPIRE_MINUTES: int = 15
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     @property
