@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchLatestUpdate } from "@/api/updates";
 import { Button } from "@/components/common/Button";
 import { UpdateNoticeModal } from "@/components/common/UpdateNoticeModal";
+import { FeatureShowcase } from "@/components/home/FeatureShowcase";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuth } from "@/hooks/useAuth";
 import type { UpdateNotice } from "@/types";
@@ -57,6 +58,8 @@ export function HomePage() {
           <p className="mt-1 text-sm text-gray-500">참여중인 스터디 목록과 상세 정보를 확인하세요.</p>
         </button>
       </div>
+
+      <FeatureShowcase />
 
       {noticeToShow && <UpdateNoticeModal update={noticeToShow} onClose={closeNotice} />}
     </PageContainer>
