@@ -1,4 +1,3 @@
-import { CAMPUS_OPTIONS } from "@/constants/campusOptions";
 import type { OptionItem, StudyFilters } from "@/types";
 
 interface StudyFilterBarProps {
@@ -9,7 +8,7 @@ interface StudyFilterBarProps {
   locationOptions: OptionItem[];
 }
 
-/** 스터디 목록 상단의 검색어 + 카테고리/요일/장소/온라인여부/캠퍼스 필터 바. 모든 조건은 동시에 적용된다. */
+/** 스터디 목록 상단의 검색어 + 카테고리/요일/장소/온라인여부 필터 바. 캠퍼스는 상단 탭에서 별도로 선택한다. 모든 조건은 동시에 적용된다. */
 export function StudyFilterBar({
   filters,
   onChange,
@@ -82,19 +81,6 @@ export function StudyFilterBar({
           <option value="">온라인/오프라인</option>
           <option value="true">온라인</option>
           <option value="false">오프라인</option>
-        </select>
-
-        <select
-          className={selectClass}
-          value={filters.campus ?? ""}
-          onChange={(e) => update({ campus: e.target.value || undefined })}
-        >
-          <option value="">전체 캠퍼스</option>
-          {CAMPUS_OPTIONS.map((opt) => (
-            <option key={opt.code} value={opt.code}>
-              {opt.label}
-            </option>
-          ))}
         </select>
       </div>
     </div>

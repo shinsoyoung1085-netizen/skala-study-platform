@@ -9,6 +9,7 @@ import { Button } from "@/components/common/Button";
 import { Modal } from "@/components/common/Modal";
 import { Spinner } from "@/components/common/Spinner";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { CampusFilterTabs } from "@/components/study/CampusFilterTabs";
 import { StudyCard } from "@/components/study/StudyCard";
 import { StudyFilterBar } from "@/components/study/StudyFilterBar";
 import { StudyForm } from "@/components/study/StudyForm";
@@ -83,6 +84,13 @@ export function StudiesPage() {
       <div className="mb-6 flex items-center justify-between gap-3">
         <h1 className="text-xl font-extrabold text-gray-900">스터디</h1>
         <Button onClick={openCreateModal}>+ 스터디 만들기</Button>
+      </div>
+
+      <div className="mb-4">
+        <CampusFilterTabs
+          value={filters.campus}
+          onChange={(campus) => setFilters((prev) => ({ ...prev, campus }))}
+        />
       </div>
 
       <div className="card mb-6">
