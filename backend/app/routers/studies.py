@@ -24,7 +24,13 @@ from app.models.study import Study, StudyDay, StudyMember
 from app.models.user import User
 from app.schemas.message import MessageCreateRequest, MessageResponse
 from app.schemas.recommendation import RecommendLeaderRequest, RecommendLeaderResponse
-from app.schemas.study import StudyCreateRequest, StudyListResponse, StudyMemberResponse, StudyResponse
+from app.schemas.study import (
+    StudyCreateRequest,
+    StudyListResponse,
+    StudyMemberResponse,
+    StudyResponse,
+    StudyUpdateRequest,
+)
 from app.utils.study_mapper import to_study_response
 
 router = APIRouter(prefix="/api/studies", tags=["스터디"])
@@ -134,6 +140,55 @@ def get_study(
     db: Session = Depends(get_db),
 ):
     study = _get_study_or_404(db, study_id)
+    return to_study_response(study, current_user_id=current_user.id)
+
+
+@router.patch("/{study_id}", response_model=StudyResponse, summary="스터디 정보 수정 (개설자 전용)")
+def update_study(
+    study_id: int,
+    payload: StudyUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    study = _get_study_or_404(db, study_id)
+
+    if study.creator_id != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "본인이 개설한 스터디만 수정할 수 있습니다.")
+
+    fields_set = payload.model_fields_set
+
+    if "capacity" in fields_set and payload.capacity is not None:
+        current_member_count = len(study.members)
+        if payload.capacity < current_member_count:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                f"현재 참여 인원({current_member_count}명)보다 적은 인원으로는 설정할 수 없습니다.",
+            )
+        study.capacity = payload.capacity
+
+    if "name" in fields_set and payload.name is not None:
+        study.name = payload.name
+    if "category" in fields_set and payload.category is not None:
+        study.category = payload.category.value
+    if "description" in fields_set and payload.description is not None:
+        study.description = payload.description
+    if "time" in fields_set and payload.time is not None:
+        study.time = payload.time
+    if "location" in fields_set and payload.location is not None:
+        study.location = payload.location.value
+    if "is_online" in fields_set and payload.is_online is not None:
+        study.is_online = payload.is_online
+    if "exam_date" in fields_set:
+        study.exam_date = payload.exam_date  # 명시적으로 null을 보내면 시험일자를 제거할 수 있다.
+
+    if "days" in fields_set and payload.days is not None:
+        study.days.clear()
+        db.flush()
+        for day in dict.fromkeys(payload.days):
+            study.days.append(StudyDay(day_of_week=day.value))
+
+    db.commit()
+    db.refresh(study)
     return to_study_response(study, current_user_id=current_user.id)
 
 

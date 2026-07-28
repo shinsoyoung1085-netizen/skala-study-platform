@@ -25,6 +25,20 @@ class StudyCreateRequest(BaseModel):
     exam_date: date | None = Field(default=None, description="목표 시험일자 (선택, 자격증/어학 스터디용)")
 
 
+class StudyUpdateRequest(BaseModel):
+    """스터디 정보 수정 요청 바디 (개설자 전용). 값이 온 필드만 수정한다."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=100, description="스터디명")
+    category: CategoryCode | None = Field(default=None, description="카테고리")
+    capacity: int | None = Field(default=None, ge=2, le=100, description="모집인원")
+    description: str | None = Field(default=None, max_length=2000, description="스터디 설명")
+    days: list[DayOfWeek] | None = Field(default=None, min_length=1, description="진행 요일")
+    time: str | None = Field(default=None, min_length=1, max_length=20, description="시간")
+    location: Location | None = Field(default=None, description="장소")
+    is_online: bool | None = Field(default=None, description="온라인 여부")
+    exam_date: date | None = Field(default=None, description="목표 시험일자 (명시적으로 보내면 값이 바뀜)")
+
+
 class StudyResponse(BaseModel):
     """스터디 카드/상세에서 사용하는 응답 스키마."""
 

@@ -153,6 +153,62 @@ def test_multi_day_selection_and_smart_labels(client):
     assert names == {"매일반", "주말반", "토요일반"}
 
 
+def test_creator_can_update_study_but_others_cannot(client):
+    owner_headers = _signup_and_login(client, username="editor1", skala_id="SKALA-ED1")
+    other_headers = _signup_and_login(client, username="other3", skala_id="SKALA-OT3")
+    study = client.post(
+        "/api/studies", json=_study_payload(location="CAFE", is_online=False), headers=owner_headers
+    ).json()
+    study_id = study["id"]
+
+    forbidden_res = client.patch(
+        f"/api/studies/{study_id}", json={"location": "ONLINE"}, headers=other_headers
+    )
+    assert forbidden_res.status_code == 403
+
+    update_res = client.patch(
+        f"/api/studies/{study_id}",
+        json={"location": "ONLINE", "is_online": True, "name": "온라인 토익반"},
+        headers=owner_headers,
+    )
+    assert update_res.status_code == 200
+    body = update_res.json()
+    assert body["location"] == "ONLINE"
+    assert body["location_label"] == "온라인"
+    assert body["is_online"] is True
+    assert body["name"] == "온라인 토익반"
+    # 수정하지 않은 필드는 그대로 유지되어야 한다.
+    assert body["category"] == "TOEIC"
+
+
+def test_update_study_days_replaces_previous_selection(client):
+    owner_headers = _signup_and_login(client, username="editor2", skala_id="SKALA-ED2")
+    study = client.post(
+        "/api/studies", json=_study_payload(days=["MON"]), headers=owner_headers
+    ).json()
+
+    res = client.patch(
+        f"/api/studies/{study['id']}", json={"days": ["WED", "FRI"]}, headers=owner_headers
+    )
+    assert res.status_code == 200
+    assert res.json()["days"] == ["WED", "FRI"]
+
+
+def test_update_study_capacity_cannot_go_below_current_members(client):
+    owner_headers = _signup_and_login(client, username="editor3", skala_id="SKALA-ED3")
+    member1_headers = _signup_and_login(client, username="joiner3a", skala_id="SKALA-JN3A")
+    member2_headers = _signup_and_login(client, username="joiner3b", skala_id="SKALA-JN3B")
+    study = client.post(
+        "/api/studies", json=_study_payload(capacity=5), headers=owner_headers
+    ).json()
+    client.post(f"/api/studies/{study['id']}/join", headers=member1_headers)
+    client.post(f"/api/studies/{study['id']}/join", headers=member2_headers)
+    # 현재 인원 3명(개설자 포함) 상태에서 정원을 2명으로 줄이려 하면 거부되어야 한다.
+
+    res = client.patch(f"/api/studies/{study['id']}", json={"capacity": 2}, headers=owner_headers)
+    assert res.status_code == 400
+
+
 def test_campus_derived_from_creator_and_filterable(client):
     pangyo_headers = _signup_and_login(client, username="pangyoer", skala_id="SKALA-PG", campus="PANGYO")
     ulsan_headers = _signup_and_login(client, username="ulsaner", skala_id="SKALA-US", campus="ULSAN")

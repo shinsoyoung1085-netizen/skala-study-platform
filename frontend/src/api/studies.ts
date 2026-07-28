@@ -33,6 +33,11 @@ export async function createStudy(payload: StudyCreatePayload): Promise<Study> {
   return data;
 }
 
+export async function updateStudy(studyId: number, payload: StudyCreatePayload): Promise<Study> {
+  const { data } = await apiClient.patch<Study>(`/api/studies/${studyId}`, payload);
+  return data;
+}
+
 export async function joinStudy(studyId: number): Promise<Study> {
   const { data } = await apiClient.post<Study>(`/api/studies/${studyId}/join`);
   return data;

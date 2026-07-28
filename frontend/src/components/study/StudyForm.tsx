@@ -6,26 +6,36 @@ import { Input } from "@/components/common/Input";
 import { Select } from "@/components/common/Select";
 import { extractErrorMessage } from "@/api/client";
 import { DayToggle } from "@/components/study/DayToggle";
-import type { OptionItem, StudyCreatePayload } from "@/types";
+import type { OptionItem, Study, StudyCreatePayload } from "@/types";
 
 interface StudyFormProps {
   categoryOptions: OptionItem[];
   dayOptions: OptionItem[];
   locationOptions: OptionItem[];
   onSubmit: (payload: StudyCreatePayload) => Promise<void>;
+  /** 값이 있으면 해당 스터디 정보로 폼을 미리 채운다 (수정 모드). */
+  initial?: Study;
+  submitLabel?: string;
 }
 
-/** 스터디 생성 폼. 작성자는 로그인한 회원으로 서버에서 자동 저장되므로 입력받지 않는다. */
-export function StudyForm({ categoryOptions, dayOptions, locationOptions, onSubmit }: StudyFormProps) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [capacity, setCapacity] = useState("4");
-  const [description, setDescription] = useState("");
-  const [selectedDays, setSelectedDays] = useState<Set<string>>(new Set());
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
-  const [isOnline, setIsOnline] = useState(false);
-  const [examDate, setExamDate] = useState("");
+/** 스터디 생성/수정 폼. 작성자는 로그인한 회원으로 서버에서 자동 저장되므로 입력받지 않는다. */
+export function StudyForm({
+  categoryOptions,
+  dayOptions,
+  locationOptions,
+  onSubmit,
+  initial,
+  submitLabel = "스터디 생성하기",
+}: StudyFormProps) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [category, setCategory] = useState(initial?.category ?? "");
+  const [capacity, setCapacity] = useState(initial ? String(initial.capacity) : "4");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [selectedDays, setSelectedDays] = useState<Set<string>>(new Set(initial?.days ?? []));
+  const [time, setTime] = useState(initial?.time ?? "");
+  const [location, setLocation] = useState(initial?.location ?? "");
+  const [isOnline, setIsOnline] = useState(initial?.is_online ?? false);
+  const [examDate, setExamDate] = useState(initial?.exam_date ?? "");
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,7 +81,7 @@ export function StudyForm({ categoryOptions, dayOptions, locationOptions, onSubm
         exam_date: examDate || null,
       });
     } catch (err) {
-      setError(extractErrorMessage(err, "스터디 생성에 실패했습니다."));
+      setError(extractErrorMessage(err, "저장에 실패했습니다."));
     } finally {
       setIsSubmitting(false);
     }
@@ -155,7 +165,7 @@ export function StudyForm({ categoryOptions, dayOptions, locationOptions, onSubm
       />
 
       <Button type="submit" fullWidth isLoading={isSubmitting}>
-        스터디 생성하기
+        {submitLabel}
       </Button>
     </form>
   );

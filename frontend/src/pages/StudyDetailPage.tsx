@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { extractErrorMessage } from "@/api/client";
+import { fetchCategoryOptions, fetchDayOptions, fetchLocationOptions } from "@/api/options";
 import {
   deleteStudy,
   fetchStudyDetail,
@@ -9,16 +10,19 @@ import {
   joinStudy,
   leaveStudy,
   recommendLeader,
+  updateStudy,
 } from "@/api/studies";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
 import { Spinner } from "@/components/common/Spinner";
 import { Toast } from "@/components/common/Toast";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { RecommendLeaderModal } from "@/components/study/RecommendLeaderModal";
 import { StudyChatSection } from "@/components/study/StudyChatSection";
-import type { Study, StudyMember } from "@/types";
+import { StudyForm } from "@/components/study/StudyForm";
+import type { OptionItem, Study, StudyCreatePayload, StudyMember } from "@/types";
 
 /** 스터디 상세 페이지: 정보 조회, 참여, 탈퇴를 처리한다. 개설자에게는 참여자 목록도 보여준다. */
 export function StudyDetailPage() {
@@ -34,7 +38,22 @@ export function StudyDetailPage() {
   const [membersError, setMembersError] = useState<string | null>(null);
 
   const [isRecommendModalOpen, setIsRecommendModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [categoryOptions, setCategoryOptions] = useState<OptionItem[]>([]);
+  const [dayOptions, setDayOptions] = useState<OptionItem[]>([]);
+  const [locationOptions, setLocationOptions] = useState<OptionItem[]>([]);
+
+  useEffect(() => {
+    Promise.all([fetchCategoryOptions(), fetchDayOptions(), fetchLocationOptions()]).then(
+      ([categories, days, locations]) => {
+        setCategoryOptions(categories);
+        setDayOptions(days);
+        setLocationOptions(locations);
+      },
+    );
+  }, []);
 
   const load = useCallback(async () => {
     if (!studyId) return;
@@ -105,6 +124,13 @@ export function StudyDetailPage() {
       setIsRecommendModalOpen(false);
       setError(extractErrorMessage(err, "모임장 추천에 실패했습니다."));
     }
+  };
+
+  const handleUpdate = async (payload: StudyCreatePayload) => {
+    if (!study) return;
+    await updateStudy(study.id, payload);
+    setIsEditModalOpen(false);
+    await load();
   };
 
   const handleDelete = async () => {
@@ -205,9 +231,14 @@ export function StudyDetailPage() {
 
           <div className="flex gap-3">
             {study.is_creator ? (
-              <Button variant="danger" onClick={handleDelete} isLoading={isActing}>
-                스터디 삭제하기
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+                  수정하기
+                </Button>
+                <Button variant="danger" onClick={handleDelete} isLoading={isActing}>
+                  스터디 삭제하기
+                </Button>
+              </>
             ) : study.is_joined ? (
               <Button variant="danger" onClick={handleLeave} isLoading={isActing}>
                 탈퇴하기
@@ -223,6 +254,19 @@ export function StudyDetailPage() {
 
       {isRecommendModalOpen && (
         <RecommendLeaderModal onClose={() => setIsRecommendModalOpen(false)} onSelect={handleRecommend} />
+      )}
+
+      {isEditModalOpen && study && (
+        <Modal title="스터디 정보 수정" onClose={() => setIsEditModalOpen(false)}>
+          <StudyForm
+            initial={study}
+            submitLabel="수정 저장"
+            categoryOptions={categoryOptions}
+            dayOptions={dayOptions}
+            locationOptions={locationOptions}
+            onSubmit={handleUpdate}
+          />
+        </Modal>
       )}
 
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
