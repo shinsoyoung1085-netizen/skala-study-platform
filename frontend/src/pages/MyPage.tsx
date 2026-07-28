@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
-import { changeMyPassword, updateMyProfile } from "@/api/users";
-import { extractErrorMessage } from "@/api/client";
+import { changeMyPassword, deleteMyAccount, updateMyProfile } from "@/api/users";
+import { clearStoredToken, extractErrorMessage } from "@/api/client";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -30,6 +30,10 @@ export function MyPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 로그인한 회원 정보가 (처음) 로딩되거나 저장 후 갱신되면 수정 폼 값도 최신 상태로 맞춘다.
   useEffect(() => {
@@ -83,6 +87,25 @@ export function MyPage() {
       setPasswordError(extractErrorMessage(err, "비밀번호 변경에 실패했습니다."));
     } finally {
       setIsSavingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: FormEvent) => {
+    e.preventDefault();
+    setDeleteError(null);
+
+    if (!window.confirm("정말 탈퇴하시겠습니까? 개설한 스터디를 포함해 모든 데이터가 삭제되며 되돌릴 수 없습니다.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteMyAccount({ password: deletePassword });
+      clearStoredToken();
+      window.location.href = "/";
+    } catch (err) {
+      setDeleteError(extractErrorMessage(err, "회원 탈퇴에 실패했습니다."));
+      setIsDeleting(false);
     }
   };
 
@@ -191,6 +214,35 @@ export function MyPage() {
             비밀번호 변경
           </Button>
         </form>
+
+        <div className="card flex flex-col gap-4 border-red-100">
+          <div>
+            <h3 className="text-base font-bold text-red-600">회원 탈퇴</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              탈퇴하면 개설한 스터디를 포함한 모든 정보가 삭제되며 되돌릴 수 없습니다.
+            </p>
+          </div>
+
+          {user.is_admin ? (
+            <p className="text-sm text-gray-400">관리자 계정은 탈퇴할 수 없습니다. 다른 관리자에게 문의해주세요.</p>
+          ) : (
+            <form onSubmit={handleDeleteAccount} className="flex flex-col gap-4">
+              {deleteError && <Alert>{deleteError}</Alert>}
+
+              <Input
+                label="비밀번호 확인"
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                required
+              />
+
+              <Button type="submit" variant="danger" isLoading={isDeleting}>
+                회원 탈퇴하기
+              </Button>
+            </form>
+          )}
+        </div>
       </div>
     </PageContainer>
   );

@@ -68,3 +68,32 @@ def test_change_password_success_and_wrong_current(client):
 
     new_login = client.post("/api/auth/login", json={"username": "hong123", "password": "newpassword123"})
     assert new_login.status_code == 200
+
+
+def test_delete_account_wrong_password_rejected(client):
+    headers = _signup_and_login(client)
+    res = client.request(
+        "DELETE", "/api/users/me", json={"password": "wrong-password"}, headers=headers
+    )
+    assert res.status_code == 400
+
+
+def test_delete_account_success_and_login_fails_after(client):
+    headers = _signup_and_login(client)
+    res = client.request("DELETE", "/api/users/me", json={"password": "password123"}, headers=headers)
+    assert res.status_code == 200
+
+    login_res = client.post("/api/auth/login", json={"username": "hong123", "password": "password123"})
+    assert login_res.status_code == 401
+
+
+def test_admin_cannot_delete_own_account(client, db_session):
+    from app.models.user import User
+
+    headers = _signup_and_login(client, username="admin99", email="admin99@skala.com", skala_id="SKALA-ADM")
+    user = db_session.query(User).filter(User.username == "admin99").first()
+    user.is_admin = True
+    db_session.commit()
+
+    res = client.request("DELETE", "/api/users/me", json={"password": "password123"}, headers=headers)
+    assert res.status_code == 400

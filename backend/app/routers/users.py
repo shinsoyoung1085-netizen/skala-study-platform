@@ -10,7 +10,12 @@ from app.db.database import get_db
 from app.dependencies import get_current_user
 from app.models.study import StudyMember
 from app.models.user import User
-from app.schemas.user import ChangePasswordRequest, UpdateProfileRequest, UserProfileResponse
+from app.schemas.user import (
+    ChangePasswordRequest,
+    DeleteAccountRequest,
+    UpdateProfileRequest,
+    UserProfileResponse,
+)
 
 router = APIRouter(prefix="/api/users", tags=["회원"])
 
@@ -82,3 +87,22 @@ def change_my_password(
     current_user.hashed_password = hash_password(payload.new_password)
     db.commit()
     return {"message": "비밀번호가 변경되었습니다."}
+
+
+@router.delete("/me", summary="회원 탈퇴")
+def delete_my_account(
+    payload: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.password, current_user.hashed_password):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "비밀번호가 올바르지 않습니다.")
+    if current_user.is_admin:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "관리자 계정은 탈퇴할 수 없습니다. 다른 관리자에게 문의해주세요."
+        )
+
+    # 본인이 개설한 스터디도 함께 삭제되고(참여자 포함), 참여중이던 스터디에서는 자동으로 빠지게 된다.
+    db.delete(current_user)
+    db.commit()
+    return {"message": "회원 탈퇴가 완료되었습니다."}

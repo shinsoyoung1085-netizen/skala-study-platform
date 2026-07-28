@@ -98,6 +98,12 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=64, description="새 비밀번호")
 
 
+class DeleteAccountRequest(BaseModel):
+    """회원 탈퇴 요청 바디. 본인 확인을 위해 비밀번호를 다시 입력받는다."""
+
+    password: str = Field(..., description="현재 비밀번호")
+
+
 class AdminUserResponse(BaseModel):
     """관리자용 회원 목록 응답."""
 

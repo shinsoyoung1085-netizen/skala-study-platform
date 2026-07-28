@@ -103,6 +103,10 @@ export interface ChangePasswordPayload {
   new_password: string;
 }
 
+export interface DeleteAccountPayload {
+  password: string;
+}
+
 export interface StudyCreatePayload {
   name: string;
   category: string;
