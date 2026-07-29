@@ -10,16 +10,19 @@ from sqlalchemy.orm import Session, selectinload
 from app.db.database import get_db
 from app.dependencies import get_current_admin, get_current_main_admin
 from app.models.admin_application import AdminApplication
+from app.models.curriculum import Curriculum, Topic
 from app.models.enums import APPLICATION_STATUS_LABELS, RECOMMENDATION_TAG_LABELS, ApplicationStatus
 from app.models.recommendation import LeaderRecommendation
 from app.models.study import Study
 from app.models.update import Update
 from app.models.user import User
 from app.schemas.admin_application import AdminApplicationAdminItem
+from app.schemas.curriculum import CurriculumCreateRequest, CurriculumResponse, TopicCreateRequest, TopicResponse
 from app.schemas.recommendation import AdminRecommendationLogItem
 from app.schemas.study import StudyListResponse
 from app.schemas.update import UpdateCreateRequest, UpdateEditRequest, UpdateResponse
 from app.schemas.user import AdminUserResponse
+from app.utils.curriculum_mapper import to_curriculum_response, to_topic_response
 from app.utils.study_mapper import to_study_response
 
 router = APIRouter(prefix="/api/admin", tags=["관리자"], dependencies=[Depends(get_current_admin)])
@@ -145,6 +148,58 @@ def delete_update(update_id: int, db: Session = Depends(get_db)):
     db.delete(update)
     db.commit()
     return {"message": "업데이트 공지가 삭제되었습니다."}
+
+
+@router.post(
+    "/curricula",
+    response_model=CurriculumResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="[관리자] 교육과정 생성",
+)
+def create_curriculum(payload: CurriculumCreateRequest, db: Session = Depends(get_db)):
+    curriculum = Curriculum(title=payload.title, description=payload.description)
+    db.add(curriculum)
+    db.commit()
+    db.refresh(curriculum)
+    return to_curriculum_response(curriculum)
+
+
+@router.delete("/curricula/{curriculum_id}", summary="[관리자] 교육과정 삭제")
+def delete_curriculum(curriculum_id: int, db: Session = Depends(get_db)):
+    curriculum = db.get(Curriculum, curriculum_id)
+    if curriculum is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "교육과정을 찾을 수 없습니다.")
+    db.delete(curriculum)
+    db.commit()
+    return {"message": "교육과정이 삭제되었습니다."}
+
+
+@router.post(
+    "/curricula/{curriculum_id}/topics",
+    response_model=TopicResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="[관리자] 단원 생성",
+)
+def create_topic(curriculum_id: int, payload: TopicCreateRequest, db: Session = Depends(get_db)):
+    curriculum = db.get(Curriculum, curriculum_id)
+    if curriculum is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "교육과정을 찾을 수 없습니다.")
+
+    topic = Topic(curriculum_id=curriculum_id, title=payload.title, order_index=payload.order)
+    db.add(topic)
+    db.commit()
+    db.refresh(topic)
+    return to_topic_response(topic, message_count=0)
+
+
+@router.delete("/topics/{topic_id}", summary="[관리자] 단원 삭제")
+def delete_topic(topic_id: int, db: Session = Depends(get_db)):
+    topic = db.get(Topic, topic_id)
+    if topic is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "단원을 찾을 수 없습니다.")
+    db.delete(topic)
+    db.commit()
+    return {"message": "단원이 삭제되었습니다."}
 
 
 def _to_application_admin_item(application: AdminApplication) -> AdminApplicationAdminItem:

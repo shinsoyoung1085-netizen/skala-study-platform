@@ -12,6 +12,22 @@ export interface UserSummary {
   username: string;
 }
 
+export interface UserSkill {
+  category: string;
+  level: string;
+  level_label: string;
+}
+
+export interface UserSkillItem {
+  category: string;
+  level: string;
+}
+
+export interface CurriculumSummary {
+  id: number;
+  title: string;
+}
+
 export interface UserProfile {
   id: number;
   name: string;
@@ -27,6 +43,8 @@ export interface UserProfile {
   points: number;
   picture_url: string | null;
   has_password: boolean;
+  skills: UserSkill[];
+  curriculum: CurriculumSummary | null;
   created_at: string;
 }
 
@@ -262,4 +280,81 @@ export interface GoogleCompleteSignupPayload {
   skala_id: string;
   campus: string;
   interests: string[];
+}
+
+export interface Curriculum {
+  id: number;
+  title: string;
+  description: string;
+  topic_count: number;
+  member_count: number;
+  created_at: string;
+}
+
+export interface CurriculumListResponse {
+  total: number;
+  items: Curriculum[];
+}
+
+export interface CurriculumCreatePayload {
+  title: string;
+  description?: string;
+}
+
+export interface Topic {
+  id: number;
+  curriculum_id: number;
+  title: string;
+  order: number;
+  message_count: number;
+}
+
+export interface TopicListResponse {
+  total: number;
+  items: Topic[];
+}
+
+export interface TopicCreatePayload {
+  title: string;
+  order: number;
+}
+
+export interface TopicMessage {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  content: string;
+  is_question: boolean;
+  category: string | null;
+  reply_to_id: number | null;
+  is_accepted: boolean;
+  is_solved: boolean;
+  created_at: string;
+  is_mine: boolean;
+}
+
+export interface TopicMessageCreatePayload {
+  content: string;
+  is_question?: boolean;
+  category?: string | null;
+  reply_to_id?: number | null;
+}
+
+export interface Post {
+  id: number;
+  curriculum_id: number;
+  author: UserSummary;
+  content: string;
+  tags: string[];
+  created_at: string;
+}
+
+export interface PostListResponse {
+  total: number;
+  items: Post[];
+}
+
+export interface PostCreatePayload {
+  content: string;
+  tags: string[];
 }

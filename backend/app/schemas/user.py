@@ -5,7 +5,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.models.enums import Campus, CategoryCode
+from app.models.enums import Campus, CategoryCode, SkillLevel
+from app.schemas.curriculum import CurriculumSummary
 
 
 class SignupRequest(BaseModel):
@@ -58,6 +59,25 @@ class UserSummary(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserSkillItem(BaseModel):
+    """역량 프로필 등록/수정 요청의 항목 하나."""
+
+    category: str = Field(..., min_length=1, max_length=50, description="분야 (자유 텍스트, 예: 운영체제)")
+    level: SkillLevel = Field(..., description="이해도 (상/중/하)")
+
+
+class UserSkillUpdateRequest(BaseModel):
+    """내 역량 프로필 전체 교체 요청 (관심분야 저장 방식과 동일하게 매번 전체를 다시 저장한다)."""
+
+    skills: list[UserSkillItem] = Field(default_factory=list)
+
+
+class UserSkillResponse(BaseModel):
+    category: str
+    level: str
+    level_label: str
+
+
 class UserProfileResponse(BaseModel):
     """마이페이지 등에서 사용하는 내 정보 응답."""
 
@@ -75,6 +95,8 @@ class UserProfileResponse(BaseModel):
     points: int = Field(description="모임장 익명 추천으로 적립된 누적 포인트")
     picture_url: str | None = Field(default=None, description="구글 로그인 연동 시 프로필 사진")
     has_password: bool = Field(description="비밀번호 로그인 사용 가능 여부 (구글 전용 계정은 false)")
+    skills: list[UserSkillResponse] = Field(default_factory=list, description="분야별 이해도(역량) 프로필")
+    curriculum: CurriculumSummary | None = Field(default=None, description="소속 교육과정")
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { to: "/home", label: "홈" },
   { to: "/studies", label: "스터디" },
   { to: "/my-studies", label: "내 스터디" },
+  { to: "/curriculum", label: "교육과정" },
+  { to: "/feed", label: "정보공유" },
   { to: "/mypage", label: "마이페이지" },
 ];
 

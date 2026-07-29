@@ -7,6 +7,7 @@ import type {
   MyPointsResponse,
   UpdateProfilePayload,
   UserProfile,
+  UserSkillItem,
 } from "@/types";
 
 export async function fetchMyProfile(): Promise<UserProfile> {
@@ -25,6 +26,18 @@ export async function changeMyPassword(payload: ChangePasswordPayload): Promise<
 
 export async function deleteMyAccount(payload: DeleteAccountPayload): Promise<void> {
   await apiClient.delete("/api/users/me", { data: payload });
+}
+
+export async function updateMySkills(skills: UserSkillItem[]): Promise<UserProfile> {
+  const { data } = await apiClient.put<UserProfile>("/api/users/me/skills", { skills });
+  return data;
+}
+
+export async function setMyCurriculum(curriculumId: number): Promise<UserProfile> {
+  const { data } = await apiClient.post<UserProfile>("/api/users/me/curriculum", {
+    curriculum_id: curriculumId,
+  });
+  return data;
 }
 
 export async function fetchMyPoints(): Promise<MyPointsResponse> {

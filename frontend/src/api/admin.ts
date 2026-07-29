@@ -3,7 +3,11 @@ import type {
   AdminApplicationAdminItem,
   AdminRecommendationLogItem,
   AdminUser,
+  Curriculum,
+  CurriculumCreatePayload,
   StudyListResponse,
+  Topic,
+  TopicCreatePayload,
   UpdateCreatePayload,
   UpdateEditPayload,
   UpdateNotice,
@@ -68,4 +72,22 @@ export async function rejectAdminApplication(applicationId: number): Promise<Adm
     `/api/admin/admin-applications/${applicationId}/reject`,
   );
   return data;
+}
+
+export async function createCurriculumByAdmin(payload: CurriculumCreatePayload): Promise<Curriculum> {
+  const { data } = await apiClient.post<Curriculum>("/api/admin/curricula", payload);
+  return data;
+}
+
+export async function deleteCurriculumByAdmin(curriculumId: number): Promise<void> {
+  await apiClient.delete(`/api/admin/curricula/${curriculumId}`);
+}
+
+export async function createTopicByAdmin(curriculumId: number, payload: TopicCreatePayload): Promise<Topic> {
+  const { data } = await apiClient.post<Topic>(`/api/admin/curricula/${curriculumId}/topics`, payload);
+  return data;
+}
+
+export async function deleteTopicByAdmin(topicId: number): Promise<void> {
+  await apiClient.delete(`/api/admin/topics/${topicId}`);
 }

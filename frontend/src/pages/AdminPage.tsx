@@ -9,6 +9,7 @@ import {
 import { extractErrorMessage } from "@/api/client";
 import { AdminApplicationsPanel } from "@/components/admin/AdminApplicationsPanel";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { CurriculumManagementPanel } from "@/components/admin/CurriculumManagementPanel";
 import { LeaderPointsPanel } from "@/components/admin/LeaderPointsPanel";
 import { UpdateManagementPanel } from "@/components/admin/UpdateManagementPanel";
 import { Alert } from "@/components/common/Alert";
@@ -18,7 +19,7 @@ import { Spinner } from "@/components/common/Spinner";
 import { PageContainer } from "@/components/layout/PageContainer";
 import type { AdminUser, Study } from "@/types";
 
-type Tab = "users" | "studies" | "points" | "updates" | "applications";
+type Tab = "users" | "studies" | "points" | "updates" | "applications" | "curricula";
 
 /** 관리자 전용 페이지: 회원/스터디 목록 조회 및 삭제 기능만 제공한다. */
 export function AdminPage() {
@@ -113,6 +114,14 @@ export function AdminPage() {
         >
           관리자 신청
         </button>
+        <button
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            tab === "curricula" ? "bg-primary text-white" : "bg-gray-100 text-gray-600"
+          }`}
+          onClick={() => setTab("curricula")}
+        >
+          교육과정
+        </button>
       </div>
 
       {error && <Alert>{error}</Alert>}
@@ -205,6 +214,8 @@ export function AdminPage() {
       {!isLoading && tab === "updates" && <UpdateManagementPanel />}
 
       {!isLoading && tab === "applications" && <AdminApplicationsPanel />}
+
+      {!isLoading && tab === "curricula" && <CurriculumManagementPanel />}
     </PageContainer>
   );
 }

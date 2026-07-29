@@ -2,7 +2,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AdminRoute, ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { AdminPage } from "@/pages/AdminPage";
+import { CurriculumDashboardPage } from "@/pages/CurriculumDashboardPage";
 import { HomePage } from "@/pages/HomePage";
+import { InformationFeedPage } from "@/pages/InformationFeedPage";
 import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MyPage } from "@/pages/MyPage";
@@ -11,6 +13,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 import { SignupPage } from "@/pages/SignupPage";
 import { StudiesPage } from "@/pages/StudiesPage";
 import { StudyDetailPage } from "@/pages/StudyDetailPage";
+import { TopicQnaRoomPage } from "@/pages/TopicQnaRoomPage";
 
 export default function App() {
   return (
@@ -56,6 +59,30 @@ export default function App() {
         element={
           <ProtectedRoute>
             <MyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/curriculum"
+        element={
+          <ProtectedRoute>
+            <CurriculumDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/curriculum/topics/:topicId"
+        element={
+          <ProtectedRoute>
+            <TopicQnaRoomPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/feed"
+        element={
+          <ProtectedRoute>
+            <InformationFeedPage />
           </ProtectedRoute>
         }
       />

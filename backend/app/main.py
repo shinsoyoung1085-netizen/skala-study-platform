@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import admin, auth, options, stats, studies, updates, users
+from app.routers import admin, auth, curricula, options, posts, stats, studies, updates, users
 
 app = FastAPI(
     title="SKALA STUDY API",
@@ -30,6 +30,8 @@ app.include_router(admin.router)
 app.include_router(options.router)
 app.include_router(updates.router)
 app.include_router(stats.router)
+app.include_router(curricula.router)
+app.include_router(posts.router)
 
 
 @app.get("/api/health", tags=["헬스체크"], summary="서버 상태 확인")

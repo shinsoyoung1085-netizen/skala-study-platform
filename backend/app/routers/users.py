@@ -9,17 +9,26 @@ from app.core.security import hash_password, verify_password
 from app.db.database import get_db
 from app.dependencies import get_current_user
 from app.models.admin_application import AdminApplication
-from app.models.enums import APPLICATION_STATUS_LABELS, RECOMMENDATION_TAG_LABELS, ApplicationStatus
+from app.models.curriculum import Curriculum
+from app.models.enums import (
+    APPLICATION_STATUS_LABELS,
+    RECOMMENDATION_TAG_LABELS,
+    SKILL_LEVEL_LABELS,
+    ApplicationStatus,
+)
 from app.models.recommendation import LeaderRecommendation
 from app.models.study import StudyMember
-from app.models.user import User
+from app.models.user import User, UserSkill
 from app.schemas.admin_application import AdminApplicationCreateRequest, AdminApplicationResponse
+from app.schemas.curriculum import CurriculumAssignRequest, CurriculumSummary
 from app.schemas.recommendation import MyPointsResponse, ReceivedRecommendationItem
 from app.schemas.user import (
     ChangePasswordRequest,
     DeleteAccountRequest,
     UpdateProfileRequest,
     UserProfileResponse,
+    UserSkillResponse,
+    UserSkillUpdateRequest,
 )
 
 router = APIRouter(prefix="/api/users", tags=["회원"])
@@ -44,6 +53,13 @@ def _build_profile_response(user: User, db: Session) -> UserProfileResponse:
         points=user.points,
         picture_url=user.picture_url,
         has_password=user.hashed_password is not None,
+        skills=[
+            UserSkillResponse(
+                category=s.category, level=s.level, level_label=SKILL_LEVEL_LABELS.get(s.level, s.level)
+            )
+            for s in user.skills
+        ],
+        curriculum=CurriculumSummary.model_validate(user.curriculum) if user.curriculum else None,
         created_at=user.created_at,
     )
 
@@ -79,6 +95,42 @@ def update_my_profile(
     if payload.campus is not None:
         current_user.campus = payload.campus.value
 
+    db.commit()
+    db.refresh(current_user)
+    return _build_profile_response(current_user, db)
+
+
+@router.put("/me/skills", response_model=UserProfileResponse, summary="내 역량 프로필(분야별 이해도) 전체 저장")
+def update_my_skills(
+    payload: UserSkillUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # 관심분야 저장과 동일하게 매번 전체를 교체한다 (중복 category는 마지막 값으로 덮어씀).
+    current_user.skills.clear()
+    db.flush()
+    seen: dict[str, str] = {}
+    for item in payload.skills:
+        seen[item.category] = item.level.value
+    for category, level in seen.items():
+        current_user.skills.append(UserSkill(category=category, level=level))
+
+    db.commit()
+    db.refresh(current_user)
+    return _build_profile_response(current_user, db)
+
+
+@router.post("/me/curriculum", response_model=UserProfileResponse, summary="내 소속 교육과정 설정/변경")
+def set_my_curriculum(
+    payload: CurriculumAssignRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    curriculum = db.get(Curriculum, payload.curriculum_id)
+    if curriculum is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "교육과정을 찾을 수 없습니다.")
+
+    current_user.curriculum_id = curriculum.id
     db.commit()
     db.refresh(current_user)
     return _build_profile_response(current_user, db)

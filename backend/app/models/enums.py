@@ -69,6 +69,14 @@ class ApplicationStatus(str, Enum):
     REJECTED = "REJECTED"
 
 
+class SkillLevel(str, Enum):
+    """분야별 이해도 수준 (역량 프로필, 전문가 추천 매칭에 사용)."""
+
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+
 # 프론트엔드 표시용 한글 라벨 매핑 (API 응답에서 label로 함께 내려줄 때 사용)
 CATEGORY_LABELS: dict[str, str] = {
     CategoryCode.OPIC: "OPIC",
@@ -128,4 +136,10 @@ APPLICATION_STATUS_LABELS: dict[str, str] = {
     ApplicationStatus.PENDING: "심사중",
     ApplicationStatus.APPROVED: "승인됨",
     ApplicationStatus.REJECTED: "거절됨",
+}
+
+SKILL_LEVEL_LABELS: dict[str, str] = {
+    SkillLevel.HIGH: "상",
+    SkillLevel.MEDIUM: "중",
+    SkillLevel.LOW: "하",
 }

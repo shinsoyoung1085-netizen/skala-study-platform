@@ -30,12 +30,20 @@ class User(Base):
     is_main_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # 익명 모임장 추천으로 적립되는 소액 포인트 누적값
     points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # 소속 교육과정 (커리큘럼별 대시보드/Q&A 스페이스 분리에 사용). 관리자가 만든 커리큘럼 중 본인이 선택.
+    curriculum_id: Mapped[int | None] = mapped_column(
+        ForeignKey("curricula.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # 회원의 관심분야 목록
     interests: Mapped[list["UserInterest"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    # 회원의 분야별 이해도(역량) 프로필
+    skills: Mapped[list["UserSkill"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    # 소속 교육과정
+    curriculum: Mapped["Curriculum | None"] = relationship(back_populates="members")
     # 회원이 생성한 스터디 목록
     created_studies: Mapped[list["Study"]] = relationship(
         back_populates="creator", foreign_keys="Study.creator_id"
@@ -60,3 +68,17 @@ class UserInterest(Base):
     interest: Mapped[str] = mapped_column(String(50), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="interests")
+
+
+class UserSkill(Base):
+    """회원의 분야별 이해도(역량) 프로필 한 건. 분야는 자유 텍스트이며 Q&A 전문가 추천 매칭 기준으로 쓰인다."""
+
+    __tablename__ = "user_skills"
+    __table_args__ = (UniqueConstraint("user_id", "category", name="uq_user_skill_category"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False)
+    level: Mapped[str] = mapped_column(String(10), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="skills")
