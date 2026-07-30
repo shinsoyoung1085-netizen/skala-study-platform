@@ -96,7 +96,10 @@ export function StudyTimerProvider({ children }: { children: ReactNode }) {
     // 마지막 하트비트 이후 ~ 지금 사이(최대 30초 미만)는 아직 서버에 반영 안 된 자투리 시간이라, 종료 시점에 한 번 더 보내서 유실을 막는다.
     const flushElapsed = Math.round((Date.now() - lastTick.current) / 1000);
     // 이번 세션 전체 길이(시작~종료) - 슬라임 애니메이션 등 연출에 쓰는 "이번에 기여한 시간".
-    const sessionElapsed = sessionStart.current ? Math.round((Date.now() - sessionStart.current) / 1000) : 0;
+    // sessionStart가 없는 경우(새로고침 등으로 시작 시각을 잃은 예외 상황)엔 최소한 flush된 시간이라도 써서 애니메이션이 아예 안 뜨는 걸 막는다.
+    const sessionElapsed = sessionStart.current
+      ? Math.round((Date.now() - sessionStart.current) / 1000)
+      : flushElapsed;
 
     setIsStudying(false);
     localStorage.removeItem(STORAGE_KEY);

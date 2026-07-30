@@ -92,9 +92,12 @@ export function LeaderboardDashboard() {
         ))}
       </div>
 
-      {data.my_daily_breakdown.length > 0 && (
-        // chartTargetRef: 공부 종료 시 스톱워치 위젯이 여기로 슬라임 애니메이션을 날리고, 도착하면 이 요소 자체를 "띵" 튕긴다.
-        <div ref={chartTargetRef} className="rounded-xl">
+      {/*
+        chartTargetRef: 공부 종료 시 스톱워치 위젯이 여기로 슬라임 애니메이션을 날리고, 도착하면 이 요소를 "띵" 튕긴다.
+        데이터가 없을 때(이번 주 첫 세션 등)도 항상 렌더링해야, 그 첫 세션에서도 도착 지점이 있어 애니메이션이 뜬다.
+      */}
+      <div ref={chartTargetRef} className="rounded-xl">
+        {data.my_daily_breakdown.length > 0 ? (
           <ResponsiveContainer width="100%" height={120}>
             <BarChart data={data.my_daily_breakdown}>
               <XAxis dataKey="log_date" tickFormatter={(d: string) => d.slice(5)} fontSize={11} />
@@ -103,8 +106,12 @@ export function LeaderboardDashboard() {
               <Bar dataKey="seconds" fill="#EA5B0C" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      )}
+        ) : (
+          <div className="flex h-[120px] items-center justify-center text-xs text-gray-300">
+            이번 주 기록이 쌓이면 그래프가 여기 나타나요
+          </div>
+        )}
+      </div>
     </div>
   );
 }
