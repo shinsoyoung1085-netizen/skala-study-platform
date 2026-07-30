@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { fetchDashboard } from "@/api/leaderboard";
+import { useStudyTimer } from "@/contexts/StudyTimerContext";
 import type { DashboardResponse } from "@/types";
 
 function formatHours(seconds: number) {
@@ -10,13 +11,29 @@ function formatHours(seconds: number) {
 
 /** 홈 화면에서 내 주간 공부시간과 반/캠퍼스 대비 순위를 보여주는 경쟁 대시보드. */
 export function LeaderboardDashboard() {
+  const { chartTargetRef, isStudying } = useStudyTimer();
   const [data, setData] = useState<DashboardResponse | null>(null);
+  const wasStudying = useRef(isStudying);
 
   useEffect(() => {
     fetchDashboard()
       .then(setData)
       .catch(() => setData(null));
   }, []);
+
+  // 공부 종료 직후(슬라임이 그래프에 도착할 즈음) 최신 수치로 다시 불러와 그래프가 실제로 올라가게 한다.
+  useEffect(() => {
+    if (wasStudying.current && !isStudying) {
+      const timer = setTimeout(() => {
+        fetchDashboard()
+          .then(setData)
+          .catch(() => {});
+      }, 500);
+      wasStudying.current = isStudying;
+      return () => clearTimeout(timer);
+    }
+    wasStudying.current = isStudying;
+  }, [isStudying]);
 
   if (!data) return null;
 
@@ -76,14 +93,17 @@ export function LeaderboardDashboard() {
       </div>
 
       {data.my_daily_breakdown.length > 0 && (
-        <ResponsiveContainer width="100%" height={120}>
-          <BarChart data={data.my_daily_breakdown}>
-            <XAxis dataKey="log_date" tickFormatter={(d: string) => d.slice(5)} fontSize={11} />
-            <YAxis tickFormatter={(s: number) => formatHours(s)} fontSize={11} width={30} />
-            <Tooltip formatter={(value) => `${formatHours(Number(value))}시간`} />
-            <Bar dataKey="seconds" fill="#EA5B0C" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        // chartTargetRef: 공부 종료 시 스톱워치 위젯이 여기로 슬라임 애니메이션을 날리고, 도착하면 이 요소 자체를 "띵" 튕긴다.
+        <div ref={chartTargetRef} className="rounded-xl">
+          <ResponsiveContainer width="100%" height={120}>
+            <BarChart data={data.my_daily_breakdown}>
+              <XAxis dataKey="log_date" tickFormatter={(d: string) => d.slice(5)} fontSize={11} />
+              <YAxis tickFormatter={(s: number) => formatHours(s)} fontSize={11} width={30} />
+              <Tooltip formatter={(value) => `${formatHours(Number(value))}시간`} />
+              <Bar dataKey="seconds" fill="#EA5B0C" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   );

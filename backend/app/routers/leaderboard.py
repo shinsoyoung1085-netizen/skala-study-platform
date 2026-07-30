@@ -19,7 +19,13 @@ from app.schemas.leaderboard import (
     HeartbeatResponse,
     RankBadge,
 )
-from app.services.leaderboard_engine import class_and_campus_averages, record_heartbeat, week_bounds, weekly_totals_by_user
+from app.services.leaderboard_engine import (
+    class_and_campus_averages,
+    get_today_seconds,
+    record_heartbeat,
+    week_bounds,
+    weekly_totals_by_user,
+)
 
 router = APIRouter(prefix="/api/leaderboard", tags=["리더보드"])
 
@@ -37,6 +43,14 @@ def list_classes(
         select(StudyClass).where(StudyClass.campus == current_user.campus).order_by(StudyClass.name)
     ).scalars().all()
     return classes
+
+
+@router.get("/today", response_model=HeartbeatResponse, summary="오늘(KST) 누적 공부시간 조회")
+def get_today(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return HeartbeatResponse(today_seconds=get_today_seconds(db, current_user.id))
 
 
 @router.post("/heartbeat", response_model=HeartbeatResponse, summary="공부 시간 하트비트 (30초마다 호출)")

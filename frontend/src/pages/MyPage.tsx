@@ -20,6 +20,7 @@ import { Spinner } from "@/components/common/Spinner";
 import { CurriculumPicker } from "@/components/curriculum/CurriculumPicker";
 import { SkillEditor } from "@/components/curriculum/SkillEditor";
 import { ClassPicker } from "@/components/leaderboard/ClassPicker";
+import { StudyTimeSummaryCard } from "@/components/leaderboard/StudyTimeSummaryCard";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { CAMPUS_OPTIONS } from "@/constants/campusOptions";
 import { INTEREST_LABELS } from "@/constants/interestGroups";
@@ -203,6 +204,8 @@ export function MyPage() {
             </div>
           </div>
         </div>
+
+        <StudyTimeSummaryCard />
 
         <div className="card flex flex-col gap-3">
           <h3 className="text-base font-bold text-gray-900">교육과정</h3>

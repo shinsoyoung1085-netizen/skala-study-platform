@@ -1,5 +1,6 @@
 """주간 공부시간 집계, 순위 산정, 포인트 지급, 리셋(스냅샷) 엔진."""
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -8,10 +9,20 @@ from app.models.enums import MAX_DAILY_STUDY_SECONDS, TIER_POINTS, WEEKLY_QUALIF
 from app.models.leaderboard import PointTransaction, StudyClass, StudyDailyLog, WeeklySnapshot
 from app.models.user import User
 
+KST = ZoneInfo("Asia/Seoul")
+
+
+def today_kst() -> date:
+    """
+    한국 시간(Asia/Seoul) 기준 오늘 날짜. 하루 공부시간 집계/캡핑의 '하루' 경계가 항상 자정(KST)이 되도록,
+    배포 서버의 OS 타임존(대부분 UTC)에 의존하는 date.today() 대신 이 함수를 기준으로 삼는다.
+    """
+    return datetime.now(KST).date()
+
 
 def week_bounds(today: date | None = None) -> tuple[date, date]:
-    """ISO 기준 이번 주 월요일~일요일 범위를 반환한다."""
-    d = today or date.today()
+    """ISO 기준 이번 주 월요일~일요일 범위를 반환한다 (KST 기준)."""
+    d = today or today_kst()
     start = d - timedelta(days=d.weekday())  # 월요일
     return start, start + timedelta(days=6)  # 일요일
 
@@ -23,7 +34,7 @@ def record_heartbeat(db: Session, user_id: int, elapsed_seconds: int, today: dat
     - 하루 총합은 MAX_DAILY_STUDY_SECONDS로 캡핑(어뷰징 방지).
     반환값: 오늘의 최종 누적 초.
     """
-    d = today or date.today()
+    d = today or today_kst()
     log = db.execute(
         select(StudyDailyLog).where(StudyDailyLog.user_id == user_id, StudyDailyLog.log_date == d)
     ).scalar_one_or_none()
@@ -35,6 +46,15 @@ def record_heartbeat(db: Session, user_id: int, elapsed_seconds: int, today: dat
     log.seconds = min(log.seconds + max(0, elapsed_seconds), MAX_DAILY_STUDY_SECONDS)
     db.commit()
     return log.seconds
+
+
+def get_today_seconds(db: Session, user_id: int, today: date | None = None) -> int:
+    """오늘(KST) 누적 공부시간(초) 조회. 기록이 없으면 0 (증분 없이 조회만)."""
+    d = today or today_kst()
+    seconds = db.scalar(
+        select(StudyDailyLog.seconds).where(StudyDailyLog.user_id == user_id, StudyDailyLog.log_date == d)
+    )
+    return seconds or 0
 
 
 def weekly_totals_by_user(db: Session, week_start: date, week_end: date) -> dict[int, int]:
