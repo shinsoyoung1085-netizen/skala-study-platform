@@ -24,9 +24,15 @@ export async function logout(): Promise<void> {
   await apiClient.post("/api/auth/logout");
 }
 
+// 중복 확인은 blur마다 자동으로 나가는 요청이라, 응답이 안 오면 "확인 중..."이 화면에 무한정 남는다.
+// 로그인처럼 (Render 콜드스타트 등으로) 오래 걸려도 끝까지 기다려야 하는 요청과 달리, 이건 실패해도
+// 사용자가 다시 시도하면 그만이므로 별도로 짧은 타임아웃을 둔다.
+const DUPLICATE_CHECK_TIMEOUT_MS = 8000;
+
 export async function checkUsername(username: string): Promise<boolean> {
   const { data } = await apiClient.get<{ available: boolean }>("/api/auth/check-username", {
     params: { username },
+    timeout: DUPLICATE_CHECK_TIMEOUT_MS,
   });
   return data.available;
 }
@@ -34,6 +40,7 @@ export async function checkUsername(username: string): Promise<boolean> {
 export async function checkEmail(email: string): Promise<boolean> {
   const { data } = await apiClient.get<{ available: boolean }>("/api/auth/check-email", {
     params: { email },
+    timeout: DUPLICATE_CHECK_TIMEOUT_MS,
   });
   return data.available;
 }
@@ -41,6 +48,7 @@ export async function checkEmail(email: string): Promise<boolean> {
 export async function checkSkalaId(skalaId: string): Promise<boolean> {
   const { data } = await apiClient.get<{ available: boolean }>("/api/auth/check-skala-id", {
     params: { skala_id: skalaId },
+    timeout: DUPLICATE_CHECK_TIMEOUT_MS,
   });
   return data.available;
 }

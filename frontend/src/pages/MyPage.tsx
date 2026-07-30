@@ -10,8 +10,10 @@ import {
   updateMyProfile,
   updateMySkills,
 } from "@/api/users";
+import { checkEmail, checkUsername } from "@/api/auth";
 import { clearStoredToken, extractErrorMessage } from "@/api/client";
 import { Alert } from "@/components/common/Alert";
+import { AvailabilityHint } from "@/components/common/AvailabilityHint";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
@@ -25,6 +27,7 @@ import { PageContainer } from "@/components/layout/PageContainer";
 import { CAMPUS_OPTIONS } from "@/constants/campusOptions";
 import { INTEREST_LABELS } from "@/constants/interestGroups";
 import { useAuth } from "@/hooks/useAuth";
+import { useAvailabilityCheck } from "@/hooks/useAvailabilityCheck";
 import type { AdminApplication } from "@/types";
 
 /** 마이페이지: 프로필 조회, 계정 정보(아이디/이메일/캠퍼스) 수정, 비밀번호 변경을 제공한다. */
@@ -34,6 +37,9 @@ export function MyPage() {
   const [editUsername, setEditUsername] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCampus, setEditCampus] = useState("");
+  // skipValue: 지금 내 계정의 원래 값 그대로면(안 바꿨으면) 중복 확인을 건너뛴다 - 내 아이디/이메일이 "이미 사용 중"으로 뜨는 걸 방지.
+  const usernameCheck = useAvailabilityCheck(checkUsername, { skipValue: user?.username });
+  const emailCheck = useAvailabilityCheck(checkEmail, { skipValue: user?.email });
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -96,6 +102,16 @@ export function MyPage() {
     e.preventDefault();
     setProfileError(null);
     setProfileSuccess(null);
+
+    if (usernameCheck.status === "taken") {
+      setProfileError("이미 사용 중인 아이디입니다.");
+      return;
+    }
+    if (emailCheck.status === "taken") {
+      setProfileError("이미 사용 중인 이메일입니다.");
+      return;
+    }
+
     setIsSavingProfile(true);
     try {
       await updateMyProfile({ username: editUsername, email: editEmail, campus: editCampus });
@@ -259,19 +275,33 @@ export function MyPage() {
           {profileError && <Alert>{profileError}</Alert>}
           {profileSuccess && <Alert tone="success">{profileSuccess}</Alert>}
 
-          <Input
-            label="아이디"
-            value={editUsername}
-            onChange={(e) => setEditUsername(e.target.value)}
-            required
-          />
-          <Input
-            label="이메일"
-            type="email"
-            value={editEmail}
-            onChange={(e) => setEditEmail(e.target.value)}
-            required
-          />
+          <div>
+            <Input
+              label="아이디"
+              value={editUsername}
+              onChange={(e) => {
+                setEditUsername(e.target.value);
+                usernameCheck.reset();
+              }}
+              onBlur={() => usernameCheck.check(editUsername)}
+              required
+            />
+            <AvailabilityHint status={usernameCheck.status} />
+          </div>
+          <div>
+            <Input
+              label="이메일"
+              type="email"
+              value={editEmail}
+              onChange={(e) => {
+                setEditEmail(e.target.value);
+                emailCheck.reset();
+              }}
+              onBlur={() => emailCheck.check(editEmail)}
+              required
+            />
+            <AvailabilityHint status={emailCheck.status} />
+          </div>
           <Select
             label="캠퍼스"
             options={CAMPUS_OPTIONS}

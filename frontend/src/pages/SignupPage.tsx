@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { checkEmail, checkSkalaId, checkUsername, signup } from "@/api/auth";
 import { extractErrorMessage } from "@/api/client";
 import { Alert } from "@/components/common/Alert";
+import { AvailabilityHint } from "@/components/common/AvailabilityHint";
 import { Button } from "@/components/common/Button";
 import { Checkbox } from "@/components/common/Checkbox";
 import { Input } from "@/components/common/Input";
@@ -11,28 +12,24 @@ import { Select } from "@/components/common/Select";
 import { GoogleAuthSection } from "@/components/auth/GoogleAuthSection";
 import { CAMPUS_OPTIONS } from "@/constants/campusOptions";
 import { INTEREST_GROUPS } from "@/constants/interestGroups";
-
-type AvailabilityState = "idle" | "checking" | "available" | "taken";
-
-interface DuplicateField {
-  value: string;
-  status: AvailabilityState;
-}
-
-const INITIAL_DUPLICATE_FIELD: DuplicateField = { value: "", status: "idle" };
+import { useAvailabilityCheck } from "@/hooks/useAvailabilityCheck";
 
 /** 회원가입 페이지. 아이디/이메일/SKALA 고유번호는 blur 시점에 중복 확인을 수행한다. */
 export function SignupPage() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-  const [username, setUsername] = useState<DuplicateField>(INITIAL_DUPLICATE_FIELD);
-  const [email, setEmail] = useState<DuplicateField>(INITIAL_DUPLICATE_FIELD);
-  const [skalaId, setSkalaId] = useState<DuplicateField>(INITIAL_DUPLICATE_FIELD);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [skalaId, setSkalaId] = useState("");
   const [campus, setCampus] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [interests, setInterests] = useState<Set<string>>(new Set());
+
+  const usernameCheck = useAvailabilityCheck(checkUsername);
+  const emailCheck = useAvailabilityCheck(checkEmail);
+  const skalaIdCheck = useAvailabilityCheck(checkSkalaId);
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,48 +43,19 @@ export function SignupPage() {
     });
   };
 
-  const runDuplicateCheck = async (
-    field: DuplicateField,
-    setField: (updater: (prev: DuplicateField) => DuplicateField) => void,
-    checker: (value: string) => Promise<boolean>,
-  ) => {
-    const valueAtRequestTime = field.value;
-    if (!valueAtRequestTime) return;
-
-    setField((prev) => ({ ...prev, status: "checking" }));
-    try {
-      const available = await checker(valueAtRequestTime);
-      // 응답이 늦게 도착했을 때, 그 사이 사용자가 값을 바꿨다면 오래된 응답으로 최신 상태를 덮어쓰지 않는다.
-      setField((prev) =>
-        prev.value === valueAtRequestTime
-          ? { value: valueAtRequestTime, status: available ? "available" : "taken" }
-          : prev,
-      );
-    } catch {
-      setField((prev) => (prev.value === valueAtRequestTime ? { ...prev, status: "idle" } : prev));
-    }
-  };
-
-  const renderAvailability = (status: AvailabilityState) => {
-    if (status === "checking") return <span className="text-xs text-gray-400">확인 중...</span>;
-    if (status === "available") return <span className="text-xs text-green-600">사용 가능합니다</span>;
-    if (status === "taken") return <span className="text-xs text-red-500">이미 사용 중입니다</span>;
-    return null;
-  };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (username.status !== "available") {
+    if (usernameCheck.status !== "available") {
       setError("아이디 중복 확인을 완료해주세요.");
       return;
     }
-    if (email.status !== "available") {
+    if (emailCheck.status !== "available") {
       setError("이메일 중복 확인을 완료해주세요.");
       return;
     }
-    if (skalaId.status !== "available") {
+    if (skalaIdCheck.status !== "available") {
       setError("SKALA 고유번호 중복 확인을 완료해주세요.");
       return;
     }
@@ -108,10 +76,10 @@ export function SignupPage() {
     try {
       await signup({
         name,
-        username: username.value,
-        email: email.value,
+        username,
+        email,
         password,
-        skala_id: skalaId.value,
+        skala_id: skalaId,
         campus,
         interests: Array.from(interests),
       });
@@ -149,25 +117,31 @@ export function SignupPage() {
           <div>
             <Input
               label="아이디"
-              value={username.value}
-              onChange={(e) => setUsername({ value: e.target.value, status: "idle" })}
-              onBlur={() => runDuplicateCheck(username, setUsername, checkUsername)}
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                usernameCheck.reset();
+              }}
+              onBlur={() => usernameCheck.check(username)}
               placeholder="영문, 숫자, 밑줄(_) 사용 가능"
               required
             />
-            {renderAvailability(username.status)}
+            <AvailabilityHint status={usernameCheck.status} />
           </div>
 
           <div>
             <Input
               label="이메일"
               type="email"
-              value={email.value}
-              onChange={(e) => setEmail({ value: e.target.value, status: "idle" })}
-              onBlur={() => runDuplicateCheck(email, setEmail, checkEmail)}
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                emailCheck.reset();
+              }}
+              onBlur={() => emailCheck.check(email)}
               required
             />
-            {renderAvailability(email.status)}
+            <AvailabilityHint status={emailCheck.status} />
           </div>
 
           <Input
@@ -189,12 +163,15 @@ export function SignupPage() {
           <div>
             <Input
               label="SKALA 고유번호"
-              value={skalaId.value}
-              onChange={(e) => setSkalaId({ value: e.target.value, status: "idle" })}
-              onBlur={() => runDuplicateCheck(skalaId, setSkalaId, checkSkalaId)}
+              value={skalaId}
+              onChange={(e) => {
+                setSkalaId(e.target.value);
+                skalaIdCheck.reset();
+              }}
+              onBlur={() => skalaIdCheck.check(skalaId)}
               required
             />
-            {renderAvailability(skalaId.status)}
+            <AvailabilityHint status={skalaIdCheck.status} />
           </div>
 
           <Select
