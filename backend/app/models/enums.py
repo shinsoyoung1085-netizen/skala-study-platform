@@ -81,7 +81,8 @@ class PointReason(str, Enum):
 MAX_DAILY_STUDY_SECONDS = 6 * 3600
 
 # 주간 리더보드: 이 시간(초) 미만이면 반/캠퍼스가 이겨도 포인트 0 (프리라이더 방지 자격 조건).
-WEEKLY_QUALIFICATION_SECONDS = 10 * 3600
+# 초기엔 사용률이 낮아 0으로 임시 비활성화 - 사용량이 늘면 10 * 3600 등으로 복원해서 다시 켠다.
+WEEKLY_QUALIFICATION_SECONDS = 0
 
 # 주간 리더보드 티어별 지급 포인트.
 TIER_POINTS: dict[str, int] = {
