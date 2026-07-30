@@ -11,3 +11,8 @@ export async function pingHomeVisit(): Promise<HomeVisitStats> {
   const { data } = await apiClient.post<HomeVisitStats>("/api/stats/visits/ping");
   return data;
 }
+
+/** 회원별/기능별 이용 분석(관리자 대시보드)을 위한 방문 기록. 실패해도 화면에 영향 없어야 하므로 호출부에서 조용히 무시한다. */
+export async function trackVisit(feature: string): Promise<void> {
+  await apiClient.post("/api/stats/track", { feature });
+}

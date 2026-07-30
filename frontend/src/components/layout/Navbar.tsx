@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: "/my-studies", label: "내 스터디" },
   { to: "/curriculum", label: "교육과정" },
   { to: "/feed", label: "정보공유" },
+  { to: "/feedback", label: "후기/건의" },
   { to: "/mypage", label: "마이페이지" },
 ];
 

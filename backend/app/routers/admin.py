@@ -11,7 +11,9 @@ from app.db.database import get_db
 from app.dependencies import get_current_admin, get_current_main_admin
 from app.models.admin_application import AdminApplication
 from app.models.curriculum import Curriculum, Topic
+from app.models.analytics import PageVisit
 from app.models.enums import (
+    APP_FEATURE_LABELS,
     APPLICATION_STATUS_LABELS,
     CAMPUS_LABELS,
     RECOMMENDATION_TAG_LABELS,
@@ -23,6 +25,7 @@ from app.models.study import Study
 from app.models.update import Update
 from app.models.user import User
 from app.schemas.admin_application import AdminApplicationAdminItem
+from app.schemas.analytics import AnalyticsOverviewResponse, CampusVisitCount, FeatureVisitCount, UserVisitCount
 from app.schemas.curriculum import CurriculumCreateRequest, CurriculumResponse, TopicCreateRequest, TopicResponse
 from app.schemas.leaderboard import AdminClassResponse, ClassCreateRequest
 from app.schemas.recommendation import AdminRecommendationLogItem
@@ -338,3 +341,60 @@ def reject_admin_application(
     db.commit()
     db.refresh(application)
     return _to_application_admin_item(application)
+
+
+@router.get(
+    "/analytics/overview",
+    response_model=AnalyticsOverviewResponse,
+    summary="[관리자] 이용 분석 (캠퍼스별/기능별/회원별 방문 현황)",
+)
+def get_analytics_overview(db: Session = Depends(get_db)):
+    total_visits = db.scalar(select(func.count()).select_from(PageVisit)) or 0
+
+    campus_rows = db.execute(
+        select(User.campus, func.count())
+        .select_from(PageVisit)
+        .join(User, User.id == PageVisit.user_id)
+        .group_by(User.campus)
+    ).all()
+    campus_counts = {campus: count for campus, count in campus_rows}
+    by_campus = [
+        CampusVisitCount(campus=code, label=label, visit_count=campus_counts.get(code, 0))
+        for code, label in CAMPUS_LABELS.items()
+    ]
+
+    feature_rows = db.execute(
+        select(PageVisit.feature, func.count()).group_by(PageVisit.feature)
+    ).all()
+    feature_counts = {feature: count for feature, count in feature_rows}
+    by_feature = sorted(
+        (
+            FeatureVisitCount(feature=code, label=label, visit_count=feature_counts.get(code, 0))
+            for code, label in APP_FEATURE_LABELS.items()
+        ),
+        key=lambda item: item.visit_count,
+        reverse=True,
+    )
+
+    user_rows = db.execute(
+        select(User.id, User.name, User.campus, func.count(), func.max(PageVisit.created_at))
+        .select_from(PageVisit)
+        .join(User, User.id == PageVisit.user_id)
+        .group_by(User.id, User.name, User.campus)
+        .order_by(func.count().desc())
+        .limit(50)
+    ).all()
+    top_users = [
+        UserVisitCount(
+            user_id=uid,
+            name=name,
+            campus_label=CAMPUS_LABELS.get(campus, campus),
+            visit_count=count,
+            last_visited_at=last_visited_at,
+        )
+        for uid, name, campus, count, last_visited_at in user_rows
+    ]
+
+    return AnalyticsOverviewResponse(
+        total_visits=total_visits, by_campus=by_campus, by_feature=by_feature, top_users=top_users
+    )

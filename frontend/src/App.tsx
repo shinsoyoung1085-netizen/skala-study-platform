@@ -1,8 +1,10 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AdminRoute, ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { usePageViewTracking } from "@/hooks/usePageViewTracking";
 import { AdminPage } from "@/pages/AdminPage";
 import { CurriculumDashboardPage } from "@/pages/CurriculumDashboardPage";
+import { FeedbackPage } from "@/pages/FeedbackPage";
 import { HomePage } from "@/pages/HomePage";
 import { InformationFeedPage } from "@/pages/InformationFeedPage";
 import { LandingPage } from "@/pages/LandingPage";
@@ -16,6 +18,8 @@ import { StudyDetailPage } from "@/pages/StudyDetailPage";
 import { TopicQnaRoomPage } from "@/pages/TopicQnaRoomPage";
 
 export default function App() {
+  usePageViewTracking();
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -83,6 +87,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <InformationFeedPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/feedback"
+        element={
+          <ProtectedRoute>
+            <FeedbackPage />
           </ProtectedRoute>
         }
       />

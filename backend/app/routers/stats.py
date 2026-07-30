@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.dependencies import get_current_user
+from app.models.analytics import PageVisit
 from app.models.enums import CAMPUS_LABELS
 from app.models.site_visit import HomeVisitCounter
 from app.models.user import User
+from app.schemas.analytics import TrackVisitRequest
 from app.schemas.stats import CampusCount, HomeVisitResponse, MemberStatsResponse
 
 router = APIRouter(prefix="/api/stats", tags=["통계"])
@@ -46,3 +48,13 @@ def ping_home_visit(
     db.commit()
     db.refresh(counter)
     return HomeVisitResponse(total_visits=counter.total_visits)
+
+
+@router.post("/track", status_code=204, summary="화면(기능) 방문 기록 (관리자 이용 분석용)")
+def track_visit(
+    payload: TrackVisitRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db.add(PageVisit(user_id=current_user.id, feature=payload.feature.value))
+    db.commit()

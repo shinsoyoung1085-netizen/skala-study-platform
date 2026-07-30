@@ -100,6 +100,28 @@ class SkillLevel(str, Enum):
     LOW = "LOW"
 
 
+class AppFeature(str, Enum):
+    """방문 추적 대상이 되는 화면(기능) 키. 프론트 라우트와 1:1로 매핑된다."""
+
+    HOME = "HOME"
+    STUDIES = "STUDIES"
+    MY_STUDIES = "MY_STUDIES"
+    CURRICULUM = "CURRICULUM"
+    FEED = "FEED"
+    FEEDBACK = "FEEDBACK"
+    MYPAGE = "MYPAGE"
+    ADMIN = "ADMIN"
+
+
+class FeedbackCategory(str, Enum):
+    """익명 후기/건의 게시글의 분류 (관리자 분류/필터용)."""
+
+    PRAISE = "PRAISE"
+    SUGGESTION = "SUGGESTION"
+    BUG = "BUG"
+    ETC = "ETC"
+
+
 # 프론트엔드 표시용 한글 라벨 매핑 (API 응답에서 label로 함께 내려줄 때 사용)
 CATEGORY_LABELS: dict[str, str] = {
     CategoryCode.OPIC: "OPIC",
@@ -165,4 +187,22 @@ SKILL_LEVEL_LABELS: dict[str, str] = {
     SkillLevel.HIGH: "상",
     SkillLevel.MEDIUM: "중",
     SkillLevel.LOW: "하",
+}
+
+APP_FEATURE_LABELS: dict[str, str] = {
+    AppFeature.HOME: "홈",
+    AppFeature.STUDIES: "스터디",
+    AppFeature.MY_STUDIES: "내 스터디",
+    AppFeature.CURRICULUM: "교육과정",
+    AppFeature.FEED: "정보공유",
+    AppFeature.FEEDBACK: "후기/건의",
+    AppFeature.MYPAGE: "마이페이지",
+    AppFeature.ADMIN: "관리자",
+}
+
+FEEDBACK_CATEGORY_LABELS: dict[str, str] = {
+    FeedbackCategory.PRAISE: "칭찬",
+    FeedbackCategory.SUGGESTION: "건의",
+    FeedbackCategory.BUG: "버그 제보",
+    FeedbackCategory.ETC: "기타",
 }

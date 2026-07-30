@@ -8,7 +8,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.db.database import SessionLocal
-from app.routers import admin, auth, curricula, leaderboard, options, posts, stats, studies, updates, users
+from app.routers import (
+    admin,
+    auth,
+    curricula,
+    feedback,
+    leaderboard,
+    options,
+    posts,
+    stats,
+    studies,
+    updates,
+    users,
+)
 from app.services.leaderboard_engine import run_weekly_reset, week_bounds
 
 app = FastAPI(
@@ -37,6 +49,7 @@ app.include_router(stats.router)
 app.include_router(curricula.router)
 app.include_router(posts.router)
 app.include_router(leaderboard.router)
+app.include_router(feedback.router)
 
 
 @app.get("/api/health", tags=["헬스체크"], summary="서버 상태 확인")

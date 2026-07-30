@@ -4,6 +4,7 @@ import type {
   AdminClassItem,
   AdminRecommendationLogItem,
   AdminUser,
+  AnalyticsOverviewResponse,
   ClassCreatePayload,
   Curriculum,
   CurriculumCreatePayload,
@@ -14,6 +15,11 @@ import type {
   UpdateEditPayload,
   UpdateNotice,
 } from "@/types";
+
+export async function fetchAnalyticsOverview(): Promise<AnalyticsOverviewResponse> {
+  const { data } = await apiClient.get<AnalyticsOverviewResponse>("/api/admin/analytics/overview");
+  return data;
+}
 
 export async function fetchAllUsers(): Promise<AdminUser[]> {
   const { data } = await apiClient.get<AdminUser[]>("/api/admin/users");

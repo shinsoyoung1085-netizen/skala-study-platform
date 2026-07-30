@@ -253,6 +253,52 @@ export interface HomeVisitStats {
   total_visits: number;
 }
 
+export interface CampusVisitCount {
+  campus: string;
+  label: string;
+  visit_count: number;
+}
+
+export interface FeatureVisitCount {
+  feature: string;
+  label: string;
+  visit_count: number;
+}
+
+export interface UserVisitCount {
+  user_id: number;
+  name: string;
+  campus_label: string;
+  visit_count: number;
+  last_visited_at: string | null;
+}
+
+export interface AnalyticsOverviewResponse {
+  total_visits: number;
+  by_campus: CampusVisitCount[];
+  by_feature: FeatureVisitCount[];
+  top_users: UserVisitCount[];
+}
+
+export interface Feedback {
+  id: number;
+  category: string;
+  category_label: string;
+  content: string;
+  is_mine: boolean;
+  created_at: string;
+}
+
+export interface FeedbackListResponse {
+  total: number;
+  items: Feedback[];
+}
+
+export interface FeedbackCreatePayload {
+  category: string;
+  content: string;
+}
+
 export interface DailyBreakdownItem {
   log_date: string;
   seconds: number;

@@ -13,6 +13,8 @@ from app.models.curriculum import Curriculum, Topic  # noqa: F401
 from app.models.topic_message import TopicMessage  # noqa: F401
 from app.models.post import Post, PostTag  # noqa: F401
 from app.models.leaderboard import StudyClass, StudyDailyLog, WeeklySnapshot, PointTransaction  # noqa: F401
+from app.models.analytics import PageVisit  # noqa: F401
+from app.models.feedback import Feedback  # noqa: F401
 
 __all__ = [
     "User",
@@ -36,4 +38,6 @@ __all__ = [
     "StudyDailyLog",
     "WeeklySnapshot",
     "PointTransaction",
+    "PageVisit",
+    "Feedback",
 ]
