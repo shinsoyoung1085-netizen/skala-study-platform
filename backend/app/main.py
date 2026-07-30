@@ -73,4 +73,11 @@ def weekly_reset_job():
 
 @app.on_event("startup")
 def start_scheduler():
-    scheduler.start()
+    if not scheduler.running:
+        scheduler.start()
+
+
+@app.on_event("shutdown")
+def stop_scheduler():
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
