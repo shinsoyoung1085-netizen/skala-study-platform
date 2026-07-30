@@ -20,6 +20,7 @@ from app.models.enums import (
     RECOMMENDATION_TAG_LABELS,
     ApplicationStatus,
 )
+from app.models.feedback import Feedback
 from app.models.leaderboard import StudyClass
 from app.models.recommendation import LeaderRecommendation
 from app.models.study import Study
@@ -28,12 +29,14 @@ from app.models.user import User
 from app.schemas.admin_application import AdminApplicationAdminItem
 from app.schemas.analytics import AnalyticsOverviewResponse, CampusVisitCount, FeatureVisitCount, UserVisitCount
 from app.schemas.curriculum import CurriculumCreateRequest, CurriculumResponse, TopicCreateRequest, TopicResponse
+from app.schemas.feedback import FeedbackAdminUpdateRequest, FeedbackResponse
 from app.schemas.leaderboard import AdminClassResponse, ClassCreateRequest
 from app.schemas.recommendation import AdminRecommendationLogItem
 from app.schemas.study import StudyListResponse
 from app.schemas.update import UpdateCreateRequest, UpdateEditRequest, UpdateResponse
 from app.schemas.user import AdminPasswordResetResponse, AdminUserResponse
 from app.utils.curriculum_mapper import to_curriculum_response, to_topic_response
+from app.utils.feedback_mapper import to_feedback_response
 from app.utils.study_mapper import to_study_response
 
 router = APIRouter(prefix="/api/admin", tags=["관리자"], dependencies=[Depends(get_current_admin)])
@@ -415,3 +418,29 @@ def get_analytics_overview(db: Session = Depends(get_db)):
     return AnalyticsOverviewResponse(
         total_visits=total_visits, by_campus=by_campus, by_feature=by_feature, top_users=top_users
     )
+
+
+@router.patch(
+    "/feedback/{feedback_id}",
+    response_model=FeedbackResponse,
+    summary="[관리자] 후기/건의 답변 작성/수정 및 해결 상태 변경",
+)
+def update_feedback_admin(
+    feedback_id: int,
+    payload: FeedbackAdminUpdateRequest,
+    current_admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    item = db.get(Feedback, feedback_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "게시글을 찾을 수 없습니다.")
+
+    if payload.admin_reply is not None:
+        item.admin_reply = payload.admin_reply
+        item.replied_at = datetime.now(timezone.utc)
+    if payload.is_resolved is not None:
+        item.is_resolved = payload.is_resolved
+
+    db.commit()
+    db.refresh(item)
+    return to_feedback_response(item, current_admin)

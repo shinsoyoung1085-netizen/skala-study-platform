@@ -13,10 +13,24 @@ class FeedbackCreateRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=1000, description="후기/건의 내용")
 
 
+class FeedbackEditRequest(BaseModel):
+    """본인 글 수정 요청. 값이 주어진 필드만 변경한다."""
+
+    category: FeedbackCategory | None = None
+    content: str | None = Field(default=None, min_length=1, max_length=1000)
+
+
+class FeedbackAdminUpdateRequest(BaseModel):
+    """관리자의 답변 작성/수정 및 해결 상태 변경 요청. 값이 주어진 필드만 변경한다."""
+
+    admin_reply: str | None = Field(default=None, min_length=1, max_length=1000)
+    is_resolved: bool | None = None
+
+
 class FeedbackResponse(BaseModel):
     """
     작성자 정보는 어떤 필드로도 포함하지 않는다 (완전 익명).
-    is_mine만 본인 글 여부를 알려줘서, 프론트에서 본인 글 삭제 버튼을 띄울 수 있게 한다.
+    is_mine만 본인 글 여부를 알려줘서, 프론트에서 본인 글 수정/삭제 버튼을 띄울 수 있게 한다.
     """
 
     id: int
@@ -24,6 +38,9 @@ class FeedbackResponse(BaseModel):
     category_label: str
     content: str
     is_mine: bool
+    is_resolved: bool
+    admin_reply: str | None
+    replied_at: datetime | None
     created_at: datetime
 
 

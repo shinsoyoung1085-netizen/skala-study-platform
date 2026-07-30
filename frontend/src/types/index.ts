@@ -290,6 +290,9 @@ export interface Feedback {
   category_label: string;
   content: string;
   is_mine: boolean;
+  is_resolved: boolean;
+  admin_reply: string | null;
+  replied_at: string | null;
   created_at: string;
 }
 
@@ -301,6 +304,16 @@ export interface FeedbackListResponse {
 export interface FeedbackCreatePayload {
   category: string;
   content: string;
+}
+
+export interface FeedbackEditPayload {
+  category?: string;
+  content?: string;
+}
+
+export interface FeedbackAdminUpdatePayload {
+  admin_reply?: string;
+  is_resolved?: boolean;
 }
 
 export interface DailyBreakdownItem {

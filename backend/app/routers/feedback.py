@@ -7,23 +7,17 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.dependencies import get_current_user
-from app.models.enums import FEEDBACK_CATEGORY_LABELS
 from app.models.feedback import Feedback
 from app.models.user import User
-from app.schemas.feedback import FeedbackCreateRequest, FeedbackListResponse, FeedbackResponse
+from app.schemas.feedback import (
+    FeedbackCreateRequest,
+    FeedbackEditRequest,
+    FeedbackListResponse,
+    FeedbackResponse,
+)
+from app.utils.feedback_mapper import to_feedback_response
 
 router = APIRouter(prefix="/api/feedback", tags=["후기/건의"])
-
-
-def _to_response(item: Feedback, current_user: User) -> FeedbackResponse:
-    return FeedbackResponse(
-        id=item.id,
-        category=item.category,
-        category_label=FEEDBACK_CATEGORY_LABELS.get(item.category, item.category),
-        content=item.content,
-        is_mine=item.user_id == current_user.id,
-        created_at=item.created_at,
-    )
 
 
 @router.post("", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED, summary="익명 후기/건의 작성")
@@ -36,7 +30,7 @@ def create_feedback(
     db.add(item)
     db.commit()
     db.refresh(item)
-    return _to_response(item, current_user)
+    return to_feedback_response(item, current_user)
 
 
 @router.get("", response_model=FeedbackListResponse, summary="익명 후기/건의 목록 조회")
@@ -46,8 +40,31 @@ def list_feedback(
 ):
     items = db.scalars(select(Feedback).order_by(Feedback.created_at.desc())).all()
     return FeedbackListResponse(
-        total=len(items), items=[_to_response(item, current_user) for item in items]
+        total=len(items), items=[to_feedback_response(item, current_user) for item in items]
     )
+
+
+@router.patch("/{feedback_id}", response_model=FeedbackResponse, summary="후기/건의 수정 (본인 글만)")
+def edit_feedback(
+    feedback_id: int,
+    payload: FeedbackEditRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    item = db.get(Feedback, feedback_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "게시글을 찾을 수 없습니다.")
+    if item.user_id != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "본인 글만 수정할 수 있습니다.")
+
+    if payload.category is not None:
+        item.category = payload.category.value
+    if payload.content is not None:
+        item.content = payload.content
+
+    db.commit()
+    db.refresh(item)
+    return to_feedback_response(item, current_user)
 
 
 @router.delete("/{feedback_id}", summary="후기/건의 삭제 (본인 글 또는 관리자)")

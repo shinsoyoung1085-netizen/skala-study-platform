@@ -9,6 +9,8 @@ import type {
   ClassCreatePayload,
   Curriculum,
   CurriculumCreatePayload,
+  Feedback,
+  FeedbackAdminUpdatePayload,
   StudyListResponse,
   Topic,
   TopicCreatePayload,
@@ -120,4 +122,13 @@ export async function deleteClassByAdmin(classId: number): Promise<void> {
 
 export async function deleteTopicByAdmin(topicId: number): Promise<void> {
   await apiClient.delete(`/api/admin/topics/${topicId}`);
+}
+
+/** 후기/건의에 관리자 답변을 남기거나(admin_reply), 해결 상태(is_resolved)를 변경한다. */
+export async function updateFeedbackByAdmin(
+  feedbackId: number,
+  payload: FeedbackAdminUpdatePayload,
+): Promise<Feedback> {
+  const { data } = await apiClient.patch<Feedback>(`/api/admin/feedback/${feedbackId}`, payload);
+  return data;
 }

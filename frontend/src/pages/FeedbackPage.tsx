@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
-import { createFeedback, deleteFeedback, fetchFeedback } from "@/api/feedback";
+import { updateFeedbackByAdmin } from "@/api/admin";
 import { extractErrorMessage } from "@/api/client";
+import { createFeedback, deleteFeedback, editFeedback, fetchFeedback } from "@/api/feedback";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
@@ -28,6 +29,12 @@ export function FeedbackPage() {
   const [category, setCategory] = useState(FEEDBACK_CATEGORY_OPTIONS[0].code);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+
+  const [replyingId, setReplyingId] = useState<number | null>(null);
+  const [replyContent, setReplyContent] = useState("");
 
   const load = useCallback(async () => {
     setError(null);
@@ -65,6 +72,57 @@ export function FeedbackPage() {
       await load();
     } catch (err) {
       setError(extractErrorMessage(err, "삭제에 실패했습니다."));
+    }
+  };
+
+  const startEdit = (item: Feedback) => {
+    setEditingId(item.id);
+    setEditContent(item.content);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditContent("");
+  };
+
+  const handleEditSubmit = async (id: number) => {
+    if (!editContent.trim()) return;
+    try {
+      await editFeedback(id, { content: editContent });
+      cancelEdit();
+      await load();
+    } catch (err) {
+      setError(extractErrorMessage(err, "수정에 실패했습니다."));
+    }
+  };
+
+  const startReply = (item: Feedback) => {
+    setReplyingId(item.id);
+    setReplyContent(item.admin_reply ?? "");
+  };
+
+  const cancelReply = () => {
+    setReplyingId(null);
+    setReplyContent("");
+  };
+
+  const handleReplySubmit = async (id: number) => {
+    if (!replyContent.trim()) return;
+    try {
+      await updateFeedbackByAdmin(id, { admin_reply: replyContent });
+      cancelReply();
+      await load();
+    } catch (err) {
+      setError(extractErrorMessage(err, "답변 등록에 실패했습니다."));
+    }
+  };
+
+  const toggleResolved = async (item: Feedback) => {
+    try {
+      await updateFeedbackByAdmin(item.id, { is_resolved: !item.is_resolved });
+      await load();
+    } catch (err) {
+      setError(extractErrorMessage(err, "상태 변경에 실패했습니다."));
     }
   };
 
@@ -106,22 +164,101 @@ export function FeedbackPage() {
         <div className="flex flex-col gap-4">
           {items?.map((item) => (
             <div key={item.id} className="card flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <Badge tone={CATEGORY_TONE[item.category] ?? "neutral"}>{item.category_label}</Badge>
-                {(item.is_mine || user?.is_admin) && (
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="text-xs text-gray-400 hover:text-red-500"
-                  >
-                    삭제
-                  </button>
-                )}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Badge tone={CATEGORY_TONE[item.category] ?? "neutral"}>{item.category_label}</Badge>
+                  {item.is_resolved && <Badge tone="success">해결됨</Badge>}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-400">
+                  {item.is_mine && editingId !== item.id && (
+                    <button onClick={() => startEdit(item)} className="hover:text-primary">
+                      수정
+                    </button>
+                  )}
+                  {(item.is_mine || user?.is_admin) && (
+                    <button onClick={() => handleDelete(item.id)} className="hover:text-red-500">
+                      삭제
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{item.content}</p>
+
+              {editingId === item.id ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    className="min-h-[80px] w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    maxLength={1000}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={cancelEdit}>
+                      취소
+                    </Button>
+                    <Button size="sm" disabled={!editContent.trim()} onClick={() => handleEditSubmit(item.id)}>
+                      저장
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{item.content}</p>
+              )}
+
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{item.is_mine ? "내가 쓴 글" : "익명"}</span>
                 <span>{new Date(item.created_at).toLocaleString("ko-KR")}</span>
               </div>
+
+              {item.admin_reply && replyingId !== item.id && (
+                <div className="rounded-xl bg-primary-50 px-4 py-3">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-xs font-bold text-primary-700">관리자 답변</span>
+                    {item.replied_at && (
+                      <span className="text-xs text-gray-400">
+                        {new Date(item.replied_at).toLocaleString("ko-KR")}
+                      </span>
+                    )}
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{item.admin_reply}</p>
+                </div>
+              )}
+
+              {user?.is_admin && (
+                <div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
+                  {replyingId === item.id ? (
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        className="min-h-[80px] w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
+                        placeholder="답변을 입력하세요"
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        maxLength={1000}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={cancelReply}>
+                          취소
+                        </Button>
+                        <Button size="sm" disabled={!replyContent.trim()} onClick={() => handleReplySubmit(item.id)}>
+                          답변 저장
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => startReply(item)}>
+                        {item.admin_reply ? "답변 수정" : "답변 작성"}
+                      </Button>
+                      <Button
+                        variant={item.is_resolved ? "outline" : "secondary"}
+                        size="sm"
+                        onClick={() => toggleResolved(item)}
+                      >
+                        {item.is_resolved ? "미해결로 되돌리기" : "해결 완료 처리"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
