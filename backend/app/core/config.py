@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # Google 신규 가입 시 발급하는 "프로필 입력 대기" 토큰의 만료 시간(분)
     GOOGLE_PENDING_SIGNUP_EXPIRE_MINUTES: int = 15
 
+    # 후기/건의 게시판의 "AI 초안 생성" 기능에 사용하는 Anthropic API 키 (설정하지 않으면 해당 기능은 비활성화된다)
+    ANTHROPIC_API_KEY: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     @property

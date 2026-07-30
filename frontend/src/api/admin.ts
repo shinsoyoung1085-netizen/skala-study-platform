@@ -11,6 +11,7 @@ import type {
   CurriculumCreatePayload,
   Feedback,
   FeedbackAdminUpdatePayload,
+  FeedbackAiDraft,
   StudyListResponse,
   Topic,
   TopicCreatePayload,
@@ -130,5 +131,11 @@ export async function updateFeedbackByAdmin(
   payload: FeedbackAdminUpdatePayload,
 ): Promise<Feedback> {
   const { data } = await apiClient.patch<Feedback>(`/api/admin/feedback/${feedbackId}`, payload);
+  return data;
+}
+
+/** AI에게 현실성 검토 + 답변 초안을 요청한다. 결과는 저장되지 않으며 관리자가 검토 후 직접 저장해야 한다. */
+export async function generateFeedbackAiDraft(feedbackId: number): Promise<FeedbackAiDraft> {
+  const { data } = await apiClient.post<FeedbackAiDraft>(`/api/admin/feedback/${feedbackId}/ai-draft`);
   return data;
 }

@@ -17,3 +17,4 @@ google-auth==2.35.0
 requests==2.32.3
 apscheduler==3.10.4
 tzdata==2024.2
+anthropic==0.40.0

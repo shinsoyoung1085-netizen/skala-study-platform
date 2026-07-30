@@ -17,6 +17,7 @@ from app.models.enums import (
     APP_FEATURE_LABELS,
     APPLICATION_STATUS_LABELS,
     CAMPUS_LABELS,
+    FEEDBACK_CATEGORY_LABELS,
     RECOMMENDATION_TAG_LABELS,
     ApplicationStatus,
 )
@@ -29,12 +30,13 @@ from app.models.user import User
 from app.schemas.admin_application import AdminApplicationAdminItem
 from app.schemas.analytics import AnalyticsOverviewResponse, CampusVisitCount, FeatureVisitCount, UserVisitCount
 from app.schemas.curriculum import CurriculumCreateRequest, CurriculumResponse, TopicCreateRequest, TopicResponse
-from app.schemas.feedback import FeedbackAdminUpdateRequest, FeedbackResponse
+from app.schemas.feedback import FeedbackAdminUpdateRequest, FeedbackAiDraftResponse, FeedbackResponse
 from app.schemas.leaderboard import AdminClassResponse, ClassCreateRequest
 from app.schemas.recommendation import AdminRecommendationLogItem
 from app.schemas.study import StudyListResponse
 from app.schemas.update import UpdateCreateRequest, UpdateEditRequest, UpdateResponse
 from app.schemas.user import AdminPasswordResetResponse, AdminUserResponse
+from app.services.feedback_reviewer import FeedbackReviewerNotConfiguredError, generate_feedback_draft
 from app.utils.curriculum_mapper import to_curriculum_response, to_topic_response
 from app.utils.feedback_mapper import to_feedback_response
 from app.utils.study_mapper import to_study_response
@@ -444,3 +446,33 @@ def update_feedback_admin(
     db.commit()
     db.refresh(item)
     return to_feedback_response(item, current_admin)
+
+
+@router.post(
+    "/feedback/{feedback_id}/ai-draft",
+    response_model=FeedbackAiDraftResponse,
+    summary="[관리자] 후기/건의 AI 현실성 검토 및 답변 초안 생성",
+)
+def generate_feedback_ai_draft(feedback_id: int, db: Session = Depends(get_db)):
+    item = db.get(Feedback, feedback_id)
+    if item is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "게시글을 찾을 수 없습니다.")
+
+    category_label = FEEDBACK_CATEGORY_LABELS.get(item.category, item.category)
+    try:
+        draft = generate_feedback_draft(item, category_label)
+    except FeedbackReviewerNotConfiguredError:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "AI 초안 생성 기능이 설정되지 않았습니다. 서버 관리자에게 ANTHROPIC_API_KEY 설정을 요청하세요.",
+        )
+    except Exception:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, "AI 초안 생성에 실패했습니다. 잠시 후 다시 시도해주세요."
+        )
+
+    return FeedbackAiDraftResponse(
+        feasibility_note=draft.feasibility_note,
+        draft_reply=draft.draft_reply,
+        suggested_resolved=draft.suggested_resolved,
+    )

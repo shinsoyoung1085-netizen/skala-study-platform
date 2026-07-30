@@ -47,3 +47,11 @@ class FeedbackResponse(BaseModel):
 class FeedbackListResponse(BaseModel):
     total: int
     items: list[FeedbackResponse]
+
+
+class FeedbackAiDraftResponse(BaseModel):
+    """AI가 생성한 현실성 검토 및 답변 초안. 그대로 게시되지 않고 관리자 검토용으로만 반환된다."""
+
+    feasibility_note: str
+    draft_reply: str
+    suggested_resolved: bool

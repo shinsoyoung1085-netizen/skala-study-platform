@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
-import { updateFeedbackByAdmin } from "@/api/admin";
+import { generateFeedbackAiDraft, updateFeedbackByAdmin } from "@/api/admin";
 import { extractErrorMessage } from "@/api/client";
 import { createFeedback, deleteFeedback, editFeedback, fetchFeedback } from "@/api/feedback";
 import { Alert } from "@/components/common/Alert";
@@ -35,6 +35,10 @@ export function FeedbackPage() {
 
   const [replyingId, setReplyingId] = useState<number | null>(null);
   const [replyContent, setReplyContent] = useState("");
+
+  const [aiLoadingId, setAiLoadingId] = useState<number | null>(null);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const [aiSuggestedResolved, setAiSuggestedResolved] = useState<boolean | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -99,11 +103,15 @@ export function FeedbackPage() {
   const startReply = (item: Feedback) => {
     setReplyingId(item.id);
     setReplyContent(item.admin_reply ?? "");
+    setAiNote(null);
+    setAiSuggestedResolved(null);
   };
 
   const cancelReply = () => {
     setReplyingId(null);
     setReplyContent("");
+    setAiNote(null);
+    setAiSuggestedResolved(null);
   };
 
   const handleReplySubmit = async (id: number) => {
@@ -114,6 +122,23 @@ export function FeedbackPage() {
       await load();
     } catch (err) {
       setError(extractErrorMessage(err, "답변 등록에 실패했습니다."));
+    }
+  };
+
+  const handleGenerateAiDraft = async (item: Feedback) => {
+    setReplyingId(item.id);
+    setAiLoadingId(item.id);
+    setAiNote(null);
+    setAiSuggestedResolved(null);
+    try {
+      const draft = await generateFeedbackAiDraft(item.id);
+      setReplyContent(draft.draft_reply);
+      setAiNote(draft.feasibility_note);
+      setAiSuggestedResolved(draft.suggested_resolved);
+    } catch (err) {
+      setError(extractErrorMessage(err, "AI 초안 생성에 실패했습니다."));
+    } finally {
+      setAiLoadingId(null);
     }
   };
 
@@ -227,6 +252,17 @@ export function FeedbackPage() {
                 <div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
                   {replyingId === item.id ? (
                     <div className="flex flex-col gap-2">
+                      {aiNote && (
+                        <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                          <span className="font-semibold">AI 현실성 검토: </span>
+                          {aiNote}
+                          {aiSuggestedResolved !== null && (
+                            <span className="ml-1 text-amber-600">
+                              (AI 추천: {aiSuggestedResolved ? "이 답변으로 해결 처리 가능" : "추가 조치 필요, 해결 처리 보류 권장"})
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <textarea
                         className="min-h-[80px] w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-primary"
                         placeholder="답변을 입력하세요"
@@ -234,7 +270,15 @@ export function FeedbackPage() {
                         onChange={(e) => setReplyContent(e.target.value)}
                         maxLength={1000}
                       />
-                      <div className="flex justify-end gap-2">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          isLoading={aiLoadingId === item.id}
+                          onClick={() => handleGenerateAiDraft(item)}
+                        >
+                          AI 초안 생성
+                        </Button>
                         <Button variant="outline" size="sm" onClick={cancelReply}>
                           취소
                         </Button>
@@ -244,7 +288,15 @@ export function FeedbackPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-end gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        isLoading={aiLoadingId === item.id}
+                        onClick={() => handleGenerateAiDraft(item)}
+                      >
+                        AI 초안 생성
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => startReply(item)}>
                         {item.admin_reply ? "답변 수정" : "답변 작성"}
                       </Button>
