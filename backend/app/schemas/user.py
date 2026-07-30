@@ -50,6 +50,31 @@ class DuplicateCheckResponse(BaseModel):
     available: bool
 
 
+class FindUsernameRequest(BaseModel):
+    """아이디 찾기 요청. 이름/SKALA 고유번호/이메일이 모두 일치하는 계정을 찾는다."""
+
+    name: str = Field(..., min_length=1, max_length=50)
+    skala_id: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr
+
+
+class FindUsernameResponse(BaseModel):
+    username: str
+
+
+class FindPasswordRequest(BaseModel):
+    """비밀번호 찾기(임시 비밀번호 발급) 요청. 아이디/이름/SKALA 고유번호/이메일이 모두 일치해야 한다."""
+
+    username: str
+    name: str = Field(..., min_length=1, max_length=50)
+    skala_id: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr
+
+
+class FindPasswordResponse(BaseModel):
+    temporary_password: str
+
+
 class UserSummary(BaseModel):
     """스터디 목록 등에서 작성자 정보를 간단히 보여줄 때 사용."""
 

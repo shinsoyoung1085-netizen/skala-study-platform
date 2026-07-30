@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 type Tone = "error" | "success" | "info";
 
 const TONE_CLASSES: Record<Tone, string> = {
@@ -7,7 +9,7 @@ const TONE_CLASSES: Record<Tone, string> = {
 };
 
 /** 폼 에러/성공 메시지를 보여주는 배너. */
-export function Alert({ tone = "error", children }: { tone?: Tone; children: string }) {
+export function Alert({ tone = "error", children }: { tone?: Tone; children: ReactNode }) {
   return (
     <div className={`rounded-xl border px-4 py-3 text-sm ${TONE_CLASSES[tone]}`}>{children}</div>
   );

@@ -10,6 +10,7 @@ from app.core.security import (
     create_access_token,
     create_google_pending_signup_token,
     decode_google_pending_signup_token,
+    generate_temporary_password,
     hash_password,
     verify_password,
 )
@@ -23,6 +24,10 @@ from app.schemas.google_auth import (
 )
 from app.schemas.user import (
     DuplicateCheckResponse,
+    FindPasswordRequest,
+    FindPasswordResponse,
+    FindUsernameRequest,
+    FindUsernameResponse,
     LoginRequest,
     SignupRequest,
     TokenResponse,
@@ -125,6 +130,39 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         data={"sub": str(user.id)}, remember_me=payload.remember_me
     )
     return TokenResponse(access_token=access_token)
+
+
+@router.post("/find-username", response_model=FindUsernameResponse, summary="아이디 찾기")
+def find_username(payload: FindUsernameRequest, db: Session = Depends(get_db)):
+    user = db.scalar(
+        select(User).where(
+            User.name == payload.name,
+            User.skala_id == payload.skala_id,
+            User.email == payload.email,
+        )
+    )
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "일치하는 회원 정보를 찾을 수 없습니다.")
+    return FindUsernameResponse(username=user.username)
+
+
+@router.post("/find-password", response_model=FindPasswordResponse, summary="비밀번호 찾기 (임시 비밀번호 발급)")
+def find_password(payload: FindPasswordRequest, db: Session = Depends(get_db)):
+    user = db.scalar(
+        select(User).where(
+            User.username == payload.username,
+            User.name == payload.name,
+            User.skala_id == payload.skala_id,
+            User.email == payload.email,
+        )
+    )
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "일치하는 회원 정보를 찾을 수 없습니다.")
+
+    temporary_password = generate_temporary_password()
+    user.hashed_password = hash_password(temporary_password)
+    db.commit()
+    return FindPasswordResponse(temporary_password=temporary_password)
 
 
 @router.post("/logout", summary="로그아웃")

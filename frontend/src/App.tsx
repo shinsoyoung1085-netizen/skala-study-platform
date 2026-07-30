@@ -5,6 +5,7 @@ import { usePageViewTracking } from "@/hooks/usePageViewTracking";
 import { AdminPage } from "@/pages/AdminPage";
 import { CurriculumDashboardPage } from "@/pages/CurriculumDashboardPage";
 import { FeedbackPage } from "@/pages/FeedbackPage";
+import { FindAccountPage } from "@/pages/FindAccountPage";
 import { HomePage } from "@/pages/HomePage";
 import { InformationFeedPage } from "@/pages/InformationFeedPage";
 import { LandingPage } from "@/pages/LandingPage";
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/find-account" element={<FindAccountPage />} />
 
       <Route
         path="/home"

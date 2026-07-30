@@ -78,6 +78,27 @@ export interface AdminPasswordResetResponse {
   temporary_password: string;
 }
 
+export interface FindUsernamePayload {
+  name: string;
+  skala_id: string;
+  email: string;
+}
+
+export interface FindUsernameResponse {
+  username: string;
+}
+
+export interface FindPasswordPayload {
+  username: string;
+  name: string;
+  skala_id: string;
+  email: string;
+}
+
+export interface FindPasswordResponse {
+  temporary_password: string;
+}
+
 export interface Study {
   id: number;
   name: string;
@@ -314,6 +335,12 @@ export interface FeedbackEditPayload {
 export interface FeedbackAdminUpdatePayload {
   admin_reply?: string;
   is_resolved?: boolean;
+}
+
+export interface FeedbackAiDraft {
+  feasibility_note: string;
+  draft_reply: string;
+  suggested_resolved: boolean;
 }
 
 export interface DailyBreakdownItem {

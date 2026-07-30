@@ -1,5 +1,9 @@
 import { apiClient } from "@/api/client";
 import type {
+  FindPasswordPayload,
+  FindPasswordResponse,
+  FindUsernamePayload,
+  FindUsernameResponse,
   GoogleCompleteSignupPayload,
   GoogleLoginResponse,
   LoginPayload,
@@ -64,4 +68,14 @@ export async function completeGoogleSignup(payload: GoogleCompleteSignupPayload)
     payload,
   );
   return data.access_token;
+}
+
+export async function findUsername(payload: FindUsernamePayload): Promise<FindUsernameResponse> {
+  const { data } = await apiClient.post<FindUsernameResponse>("/api/auth/find-username", payload);
+  return data;
+}
+
+export async function findPassword(payload: FindPasswordPayload): Promise<FindPasswordResponse> {
+  const { data } = await apiClient.post<FindPasswordResponse>("/api/auth/find-password", payload);
+  return data;
 }

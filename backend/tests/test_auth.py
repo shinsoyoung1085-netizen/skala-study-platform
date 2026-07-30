@@ -56,3 +56,62 @@ def test_login_success_and_failure(client):
 def test_me_requires_authentication(client):
     res = client.get("/api/users/me")
     assert res.status_code == 401
+
+
+def test_find_username_success(client):
+    client.post("/api/auth/signup", json=_signup_payload())
+
+    res = client.post(
+        "/api/auth/find-username",
+        json={"name": "홍길동", "skala_id": "SKALA-0001", "email": "hong@skala.com"},
+    )
+    assert res.status_code == 200
+    assert res.json()["username"] == "hong123"
+
+
+def test_find_username_no_match(client):
+    client.post("/api/auth/signup", json=_signup_payload())
+
+    res = client.post(
+        "/api/auth/find-username",
+        json={"name": "홍길동", "skala_id": "SKALA-0001", "email": "wrong@skala.com"},
+    )
+    assert res.status_code == 404
+
+
+def test_find_password_issues_temporary_password_and_allows_login(client):
+    client.post("/api/auth/signup", json=_signup_payload())
+
+    res = client.post(
+        "/api/auth/find-password",
+        json={
+            "username": "hong123",
+            "name": "홍길동",
+            "skala_id": "SKALA-0001",
+            "email": "hong@skala.com",
+        },
+    )
+    assert res.status_code == 200
+    temporary_password = res.json()["temporary_password"]
+    assert len(temporary_password) > 0
+
+    old_login = client.post("/api/auth/login", json={"username": "hong123", "password": "password123"})
+    assert old_login.status_code == 401
+
+    new_login = client.post("/api/auth/login", json={"username": "hong123", "password": temporary_password})
+    assert new_login.status_code == 200
+
+
+def test_find_password_no_match(client):
+    client.post("/api/auth/signup", json=_signup_payload())
+
+    res = client.post(
+        "/api/auth/find-password",
+        json={
+            "username": "hong123",
+            "name": "홍길동",
+            "skala_id": "SKALA-9999",
+            "email": "hong@skala.com",
+        },
+    )
+    assert res.status_code == 404

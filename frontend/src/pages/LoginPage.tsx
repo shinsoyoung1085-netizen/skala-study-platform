@@ -64,15 +64,20 @@ export function LoginPage() {
             required
           />
 
-          <label className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-primary"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            로그인 유지
-          </label>
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2 text-gray-600">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              로그인 유지
+            </label>
+            <Link to="/find-account" className="text-gray-400 hover:text-primary">
+              아이디/비밀번호 찾기
+            </Link>
+          </div>
 
           <Button type="submit" fullWidth isLoading={isSubmitting}>
             로그인
