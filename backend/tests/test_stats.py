@@ -58,3 +58,16 @@ def test_home_visit_ping_increments_total(client):
 def test_home_visit_ping_requires_authentication(client):
     res = client.post("/api/stats/visits/ping")
     assert res.status_code == 401
+
+
+def test_home_visit_ping_returns_larger_of_home_and_page_visit_totals(client):
+    headers = _signup_and_login(client, username="visitor2", skala_id="SKALA-V2", campus="PANGYO")
+
+    # 홈 전용 카운터(1)보다 다른 화면들의 PageVisit 합계가 더 많이 쌓이면, 더 큰 쪽을 보여줘야 한다.
+    client.post("/api/stats/track", json={"feature": "STUDIES"}, headers=headers)
+    client.post("/api/stats/track", json={"feature": "MY_STUDIES"}, headers=headers)
+    client.post("/api/stats/track", json={"feature": "CURRICULUM"}, headers=headers)
+
+    res = client.post("/api/stats/visits/ping", headers=headers)
+    assert res.status_code == 200
+    assert res.json()["total_visits"] == 3

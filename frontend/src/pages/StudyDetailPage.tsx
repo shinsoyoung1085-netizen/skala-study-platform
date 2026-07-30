@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { extractErrorMessage } from "@/api/client";
 import { fetchCategoryOptions, fetchDayOptions, fetchLocationOptions } from "@/api/options";
@@ -28,6 +28,7 @@ import type { OptionItem, Study, StudyCreatePayload, StudyMember } from "@/types
 export function StudyDetailPage() {
   const { studyId } = useParams<{ studyId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [study, setStudy] = useState<Study | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +73,12 @@ export function StudyDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 홈 화면 등에서 "채팅방 바로가기"로 들어온 경우, 데이터 로딩이 끝나면 채팅 영역으로 스크롤한다.
+  useEffect(() => {
+    if (!study || location.hash !== "#chat") return;
+    document.getElementById("chat")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [study, location.hash]);
 
   // 개설자에게만 참여자 목록을 별도로 불러온다.
   useEffect(() => {
@@ -227,7 +234,9 @@ export function StudyDetailPage() {
             </div>
           )}
 
-          <StudyChatSection studyId={study.id} isMember={study.is_joined} />
+          <div id="chat">
+            <StudyChatSection studyId={study.id} isMember={study.is_joined} />
+          </div>
 
           <div className="flex gap-3">
             {study.is_creator ? (

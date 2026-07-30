@@ -47,7 +47,10 @@ def ping_home_visit(
     counter.total_visits += 1
     db.commit()
     db.refresh(counter)
-    return HomeVisitResponse(total_visits=counter.total_visits)
+
+    # 홈 전용 카운터와, 관리자 이용 분석이 집계하는 전체 화면 방문수(PageVisit) 중 더 큰 값을 보여준다.
+    page_visit_total = db.scalar(select(func.count()).select_from(PageVisit)) or 0
+    return HomeVisitResponse(total_visits=max(counter.total_visits, page_visit_total))
 
 
 @router.post("/track", status_code=204, summary="화면(기능) 방문 기록 (관리자 이용 분석용)")

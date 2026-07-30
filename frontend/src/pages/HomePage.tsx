@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { fetchMyStudies } from "@/api/studies";
 import { fetchLatestUpdate } from "@/api/updates";
 import { Button } from "@/components/common/Button";
 import { UpdateNoticeModal } from "@/components/common/UpdateNoticeModal";
@@ -9,7 +10,7 @@ import { LeaderboardDashboard } from "@/components/home/LeaderboardDashboard";
 import { MemberStatsBar } from "@/components/home/MemberStatsBar";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuth } from "@/hooks/useAuth";
-import type { UpdateNotice } from "@/types";
+import type { Study, UpdateNotice } from "@/types";
 import { dismissUpdateNoticeForToday, shouldShowUpdateNotice } from "@/utils/updateNoticeStorage";
 
 /** 로그인 후 진입하는 홈 화면. */
@@ -18,6 +19,7 @@ export function HomePage() {
   const navigate = useNavigate();
 
   const [noticeToShow, setNoticeToShow] = useState<UpdateNotice | null>(null);
+  const [myStudies, setMyStudies] = useState<Study[] | null>(null);
 
   useEffect(() => {
     fetchLatestUpdate().then((update) => {
@@ -25,6 +27,12 @@ export function HomePage() {
         setNoticeToShow(update);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    fetchMyStudies()
+      .then((res) => setMyStudies(res.items))
+      .catch(() => setMyStudies([]));
   }, []);
 
   const closeNotice = (dismissForToday: boolean) => {
@@ -43,7 +51,15 @@ export function HomePage() {
             {user?.name}님, 오늘도 함께 성장할 동료를 찾아보세요.
           </h1>
         </div>
-        <Button onClick={() => navigate("/studies")}>스터디 둘러보기</Button>
+        {myStudies && myStudies.length === 1 ? (
+          <Button onClick={() => navigate(`/studies/${myStudies[0].id}#chat`)}>
+            {myStudies[0].name} 채팅방 바로가기
+          </Button>
+        ) : myStudies && myStudies.length > 1 ? (
+          <Button onClick={() => navigate("/my-studies")}>내 스터디 채팅방 바로가기</Button>
+        ) : (
+          <Button onClick={() => navigate("/studies")}>스터디 둘러보기</Button>
+        )}
       </section>
 
       <MemberStatsBar />
