@@ -1,8 +1,10 @@
 import { apiClient } from "@/api/client";
 import type {
   AdminApplicationAdminItem,
+  AdminClassItem,
   AdminRecommendationLogItem,
   AdminUser,
+  ClassCreatePayload,
   Curriculum,
   CurriculumCreatePayload,
   StudyListResponse,
@@ -86,6 +88,20 @@ export async function deleteCurriculumByAdmin(curriculumId: number): Promise<voi
 export async function createTopicByAdmin(curriculumId: number, payload: TopicCreatePayload): Promise<Topic> {
   const { data } = await apiClient.post<Topic>(`/api/admin/curricula/${curriculumId}/topics`, payload);
   return data;
+}
+
+export async function fetchAllClassesForAdmin(): Promise<AdminClassItem[]> {
+  const { data } = await apiClient.get<AdminClassItem[]>("/api/admin/classes");
+  return data;
+}
+
+export async function createClassByAdmin(payload: ClassCreatePayload): Promise<AdminClassItem> {
+  const { data } = await apiClient.post<AdminClassItem>("/api/admin/classes", payload);
+  return data;
+}
+
+export async function deleteClassByAdmin(classId: number): Promise<void> {
+  await apiClient.delete(`/api/admin/classes/${classId}`);
 }
 
 export async function deleteTopicByAdmin(topicId: number): Promise<void> {

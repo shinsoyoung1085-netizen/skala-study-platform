@@ -4,20 +4,27 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.database import get_db
 from app.dependencies import get_current_admin, get_current_main_admin
 from app.models.admin_application import AdminApplication
 from app.models.curriculum import Curriculum, Topic
-from app.models.enums import APPLICATION_STATUS_LABELS, RECOMMENDATION_TAG_LABELS, ApplicationStatus
+from app.models.enums import (
+    APPLICATION_STATUS_LABELS,
+    CAMPUS_LABELS,
+    RECOMMENDATION_TAG_LABELS,
+    ApplicationStatus,
+)
+from app.models.leaderboard import StudyClass
 from app.models.recommendation import LeaderRecommendation
 from app.models.study import Study
 from app.models.update import Update
 from app.models.user import User
 from app.schemas.admin_application import AdminApplicationAdminItem
 from app.schemas.curriculum import CurriculumCreateRequest, CurriculumResponse, TopicCreateRequest, TopicResponse
+from app.schemas.leaderboard import AdminClassResponse, ClassCreateRequest
 from app.schemas.recommendation import AdminRecommendationLogItem
 from app.schemas.study import StudyListResponse
 from app.schemas.update import UpdateCreateRequest, UpdateEditRequest, UpdateResponse
@@ -172,6 +179,55 @@ def delete_curriculum(curriculum_id: int, db: Session = Depends(get_db)):
     db.delete(curriculum)
     db.commit()
     return {"message": "교육과정이 삭제되었습니다."}
+
+
+def _to_admin_class_response(study_class: StudyClass, member_count: int) -> AdminClassResponse:
+    return AdminClassResponse(
+        id=study_class.id,
+        campus=study_class.campus,
+        campus_label=CAMPUS_LABELS.get(study_class.campus, study_class.campus),
+        name=study_class.name,
+        member_count=member_count,
+    )
+
+
+@router.get("/classes", response_model=list[AdminClassResponse], summary="[관리자] 반 목록 조회 (전체 캠퍼스)")
+def list_classes_for_admin(db: Session = Depends(get_db)):
+    classes = db.execute(select(StudyClass).order_by(StudyClass.campus, StudyClass.name)).scalars().all()
+    counts = dict(
+        db.execute(select(User.class_id, func.count()).group_by(User.class_id)).all()
+    )
+    return [_to_admin_class_response(c, counts.get(c.id, 0)) for c in classes]
+
+
+@router.post(
+    "/classes",
+    response_model=AdminClassResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="[관리자] 반 생성",
+)
+def create_class(payload: ClassCreateRequest, db: Session = Depends(get_db)):
+    exists = db.scalar(
+        select(StudyClass).where(StudyClass.campus == payload.campus.value, StudyClass.name == payload.name)
+    )
+    if exists is not None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "이미 존재하는 반입니다.")
+
+    study_class = StudyClass(campus=payload.campus.value, name=payload.name)
+    db.add(study_class)
+    db.commit()
+    db.refresh(study_class)
+    return _to_admin_class_response(study_class, member_count=0)
+
+
+@router.delete("/classes/{class_id}", summary="[관리자] 반 삭제")
+def delete_class(class_id: int, db: Session = Depends(get_db)):
+    study_class = db.get(StudyClass, class_id)
+    if study_class is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "반을 찾을 수 없습니다.")
+    db.delete(study_class)
+    db.commit()
+    return {"message": "반이 삭제되었습니다. 소속되어 있던 회원들은 반 미배정 상태가 됩니다."}
 
 
 @router.post(

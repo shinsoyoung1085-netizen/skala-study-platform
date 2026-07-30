@@ -5,6 +5,7 @@ import { fetchLatestUpdate } from "@/api/updates";
 import { Button } from "@/components/common/Button";
 import { UpdateNoticeModal } from "@/components/common/UpdateNoticeModal";
 import { FeatureShowcase } from "@/components/home/FeatureShowcase";
+import { LeaderboardDashboard } from "@/components/home/LeaderboardDashboard";
 import { MemberStatsBar } from "@/components/home/MemberStatsBar";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +47,7 @@ export function HomePage() {
       </section>
 
       <MemberStatsBar />
+      <LeaderboardDashboard />
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <button

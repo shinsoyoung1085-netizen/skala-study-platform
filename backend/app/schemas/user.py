@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.models.enums import Campus, CategoryCode, SkillLevel
 from app.schemas.curriculum import CurriculumSummary
+from app.schemas.leaderboard import ClassSummary
 
 
 class SignupRequest(BaseModel):
@@ -97,6 +98,7 @@ class UserProfileResponse(BaseModel):
     has_password: bool = Field(description="비밀번호 로그인 사용 가능 여부 (구글 전용 계정은 false)")
     skills: list[UserSkillResponse] = Field(default_factory=list, description="분야별 이해도(역량) 프로필")
     curriculum: CurriculumSummary | None = Field(default=None, description="소속 교육과정")
+    study_class: ClassSummary | None = Field(default=None, description="소속 반 (리더보드)")
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -115,6 +117,12 @@ class UpdateProfileRequest(BaseModel):
         if v is not None and (not v.isascii() or not v.replace("_", "").isalnum()):
             raise ValueError("아이디는 영문, 숫자, 밑줄(_)만 사용할 수 있습니다.")
         return v
+
+
+class ClassAssignRequest(BaseModel):
+    """마이페이지에서 소속 반을 선택/변경할 때 사용하는 요청 바디."""
+
+    class_id: int = Field(..., description="선택할 반 ID (본인 캠퍼스 내 반이어야 한다)")
 
 
 class ChangePasswordRequest(BaseModel):

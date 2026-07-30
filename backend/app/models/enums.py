@@ -69,6 +69,28 @@ class ApplicationStatus(str, Enum):
     REJECTED = "REJECTED"
 
 
+class PointReason(str, Enum):
+    """주간 리더보드 포인트 지급 사유 (point_transactions.reason)."""
+
+    WEEKLY_INDIVIDUAL = "WEEKLY_INDIVIDUAL"  # Tier1: 반 내 개인 1위
+    WEEKLY_CLASS = "WEEKLY_CLASS"  # Tier2: 캠퍼스 내 우승 반 소속
+    WEEKLY_CAMPUS = "WEEKLY_CAMPUS"  # Tier3: 전체 우승 캠퍼스 소속
+
+
+# 주간 리더보드: 하루 최대 인정 공부시간(초). 수업시간 9~18시 기준 6시간으로 캡핑(어뷰징 방지).
+MAX_DAILY_STUDY_SECONDS = 6 * 3600
+
+# 주간 리더보드: 이 시간(초) 미만이면 반/캠퍼스가 이겨도 포인트 0 (프리라이더 방지 자격 조건).
+WEEKLY_QUALIFICATION_SECONDS = 10 * 3600
+
+# 주간 리더보드 티어별 지급 포인트.
+TIER_POINTS: dict[str, int] = {
+    PointReason.WEEKLY_INDIVIDUAL: 500,
+    PointReason.WEEKLY_CLASS: 300,
+    PointReason.WEEKLY_CAMPUS: 100,
+}
+
+
 class SkillLevel(str, Enum):
     """분야별 이해도 수준 (역량 프로필, 전문가 추천 매칭에 사용)."""
 

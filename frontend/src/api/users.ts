@@ -40,6 +40,11 @@ export async function setMyCurriculum(curriculumId: number): Promise<UserProfile
   return data;
 }
 
+export async function setMyClass(classId: number): Promise<UserProfile> {
+  const { data } = await apiClient.post<UserProfile>("/api/users/me/class", { class_id: classId });
+  return data;
+}
+
 export async function fetchMyPoints(): Promise<MyPointsResponse> {
   const { data } = await apiClient.get<MyPointsResponse>("/api/users/me/points");
   return data;

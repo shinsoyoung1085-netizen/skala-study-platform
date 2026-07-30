@@ -34,6 +34,10 @@ class User(Base):
     curriculum_id: Mapped[int | None] = mapped_column(
         ForeignKey("curricula.id", ondelete="SET NULL"), nullable=True
     )
+    # 소속 반 (캠퍼스 내 리더보드 계층: 캠퍼스 > 반 > 개인). 관리자가 배정.
+    class_id: Mapped[int | None] = mapped_column(
+        ForeignKey("study_classes.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # 회원의 관심분야 목록
@@ -44,6 +48,8 @@ class User(Base):
     skills: Mapped[list["UserSkill"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     # 소속 교육과정
     curriculum: Mapped["Curriculum | None"] = relationship(back_populates="members")
+    # 소속 반 (리더보드)
+    study_class: Mapped["StudyClass | None"] = relationship(back_populates="members")
     # 회원이 생성한 스터디 목록
     created_studies: Mapped[list["Study"]] = relationship(
         back_populates="creator", foreign_keys="Study.creator_id"

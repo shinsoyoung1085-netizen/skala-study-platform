@@ -16,14 +16,17 @@ from app.models.enums import (
     SKILL_LEVEL_LABELS,
     ApplicationStatus,
 )
+from app.models.leaderboard import StudyClass
 from app.models.recommendation import LeaderRecommendation
 from app.models.study import StudyMember
 from app.models.user import User, UserSkill
 from app.schemas.admin_application import AdminApplicationCreateRequest, AdminApplicationResponse
 from app.schemas.curriculum import CurriculumAssignRequest, CurriculumSummary
+from app.schemas.leaderboard import ClassSummary
 from app.schemas.recommendation import MyPointsResponse, ReceivedRecommendationItem
 from app.schemas.user import (
     ChangePasswordRequest,
+    ClassAssignRequest,
     DeleteAccountRequest,
     UpdateProfileRequest,
     UserProfileResponse,
@@ -60,6 +63,7 @@ def _build_profile_response(user: User, db: Session) -> UserProfileResponse:
             for s in user.skills
         ],
         curriculum=CurriculumSummary.model_validate(user.curriculum) if user.curriculum else None,
+        study_class=ClassSummary.model_validate(user.study_class) if user.study_class else None,
         created_at=user.created_at,
     )
 
@@ -131,6 +135,24 @@ def set_my_curriculum(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "교육과정을 찾을 수 없습니다.")
 
     current_user.curriculum_id = curriculum.id
+    db.commit()
+    db.refresh(current_user)
+    return _build_profile_response(current_user, db)
+
+
+@router.post("/me/class", response_model=UserProfileResponse, summary="내 소속 반 설정/변경 (리더보드)")
+def set_my_class(
+    payload: ClassAssignRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    study_class = db.get(StudyClass, payload.class_id)
+    if study_class is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "반을 찾을 수 없습니다.")
+    if study_class.campus != current_user.campus:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "본인 캠퍼스에 속한 반만 선택할 수 있습니다.")
+
+    current_user.class_id = study_class.id
     db.commit()
     db.refresh(current_user)
     return _build_profile_response(current_user, db)

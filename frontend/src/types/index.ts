@@ -28,6 +28,17 @@ export interface CurriculumSummary {
   title: string;
 }
 
+export interface ClassSummary {
+  id: number;
+  name: string;
+}
+
+export interface ClassOption {
+  id: number;
+  campus: string;
+  name: string;
+}
+
 export interface UserProfile {
   id: number;
   name: string;
@@ -45,6 +56,7 @@ export interface UserProfile {
   has_password: boolean;
   skills: UserSkill[];
   curriculum: CurriculumSummary | null;
+  study_class: ClassSummary | null;
   created_at: string;
 }
 
@@ -241,6 +253,36 @@ export interface HomeVisitStats {
   total_visits: number;
 }
 
+export interface DailyBreakdownItem {
+  log_date: string;
+  seconds: number;
+}
+
+export interface RankBadge {
+  rank: number;
+  total: number;
+}
+
+export interface CampusProgress {
+  campus: string;
+  label: string;
+  avg_seconds: number;
+}
+
+export interface DashboardResponse {
+  my_weekly_seconds: number;
+  my_daily_breakdown: DailyBreakdownItem[];
+  individual_rank_in_class: RankBadge | null;
+  class_rank_in_campus: RankBadge | null;
+  campus_rank_overall: RankBadge | null;
+  campus_progress: CampusProgress[];
+  qualifies_this_week: boolean;
+}
+
+export interface HeartbeatResponse {
+  today_seconds: number;
+}
+
 export interface AdminApplicationCreatePayload {
   reason: string;
 }
@@ -299,6 +341,19 @@ export interface CurriculumListResponse {
 export interface CurriculumCreatePayload {
   title: string;
   description?: string;
+}
+
+export interface AdminClassItem {
+  id: number;
+  campus: string;
+  campus_label: string;
+  name: string;
+  member_count: number;
+}
+
+export interface ClassCreatePayload {
+  campus: string;
+  name: string;
 }
 
 export interface Topic {
