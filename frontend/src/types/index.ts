@@ -74,6 +74,10 @@ export interface AdminUser {
   created_at: string;
 }
 
+export interface AdminPasswordResetResponse {
+  temporary_password: string;
+}
+
 export interface Study {
   id: number;
   name: string;

@@ -1,6 +1,8 @@
 """
 비밀번호 암호화 및 JWT 토큰 생성/검증을 담당하는 모듈.
 """
+import secrets
+import string
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -11,10 +13,19 @@ from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# 관리자가 회원 비밀번호를 재설정할 때 발급하는 임시 비밀번호 길이.
+TEMPORARY_PASSWORD_LENGTH = 10
+
 
 def hash_password(plain_password: str) -> str:
     """평문 비밀번호를 bcrypt로 암호화한다."""
     return pwd_context.hash(plain_password)
+
+
+def generate_temporary_password() -> str:
+    """[관리자] 비밀번호 재설정 시 발급할 임시 비밀번호를 무작위로 생성한다."""
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(TEMPORARY_PASSWORD_LENGTH))
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

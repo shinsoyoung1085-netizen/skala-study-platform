@@ -5,6 +5,7 @@ import {
   deleteUserByAdmin,
   fetchAllStudiesForAdmin,
   fetchAllUsers,
+  resetUserPasswordByAdmin,
 } from "@/api/admin";
 import { extractErrorMessage } from "@/api/client";
 import { AdminApplicationsPanel } from "@/components/admin/AdminApplicationsPanel";
@@ -17,6 +18,7 @@ import { UsageAnalyticsPanel } from "@/components/admin/UsageAnalyticsPanel";
 import { Alert } from "@/components/common/Alert";
 import { Badge } from "@/components/common/Badge";
 import { Button } from "@/components/common/Button";
+import { Modal } from "@/components/common/Modal";
 import { Spinner } from "@/components/common/Spinner";
 import { PageContainer } from "@/components/layout/PageContainer";
 import type { AdminUser, Study } from "@/types";
@@ -38,6 +40,10 @@ export function AdminPage() {
   const [studies, setStudies] = useState<Study[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [passwordResetResult, setPasswordResetResult] = useState<{
+    username: string;
+    temporaryPassword: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -64,6 +70,16 @@ export function AdminPage() {
       await load();
     } catch (err) {
       setError(extractErrorMessage(err, "회원 삭제에 실패했습니다."));
+    }
+  };
+
+  const handleResetPassword = async (user: AdminUser) => {
+    if (!window.confirm(`${user.name}(${user.username}) 님의 비밀번호를 재설정하시겠습니까?`)) return;
+    try {
+      const res = await resetUserPasswordByAdmin(user.id);
+      setPasswordResetResult({ username: user.username, temporaryPassword: res.temporary_password });
+    } catch (err) {
+      setError(extractErrorMessage(err, "비밀번호 재설정에 실패했습니다."));
     }
   };
 
@@ -187,11 +203,16 @@ export function AdminPage() {
                   </td>
                   <td className="py-3 pr-4">{u.points}P</td>
                   <td className="py-3">
-                    {!u.is_main_admin && (
-                      <Button variant="danger" size="sm" onClick={() => handleDeleteUser(u.id)}>
-                        삭제
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleResetPassword(u)}>
+                        비밀번호 재설정
                       </Button>
-                    )}
+                      {!u.is_main_admin && (
+                        <Button variant="danger" size="sm" onClick={() => handleDeleteUser(u.id)}>
+                          삭제
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -246,6 +267,28 @@ export function AdminPage() {
       {!isLoading && tab === "classes" && <ClassManagementPanel />}
 
       {!isLoading && tab === "analytics" && <UsageAnalyticsPanel />}
+
+      {passwordResetResult && (
+        <Modal title="임시 비밀번호 발급됨" onClose={() => setPasswordResetResult(null)}>
+          <p className="mb-3 text-sm text-gray-600">
+            <span className="font-semibold text-gray-900">{passwordResetResult.username}</span> 님에게 아래
+            임시 비밀번호를 전달해주세요. 로그인 후 마이페이지에서 비밀번호를 바꾸도록 안내해주세요.
+          </p>
+          <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+            <span className="font-mono text-lg font-bold tracking-wide text-gray-900">
+              {passwordResetResult.temporaryPassword}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigator.clipboard.writeText(passwordResetResult.temporaryPassword)}
+            >
+              복사
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-gray-400">이 창을 닫으면 다시 확인할 수 없어요.</p>
+        </Modal>
+      )}
     </PageContainer>
   );
 }

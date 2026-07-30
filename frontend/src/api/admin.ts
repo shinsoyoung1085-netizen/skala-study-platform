@@ -2,6 +2,7 @@ import { apiClient } from "@/api/client";
 import type {
   AdminApplicationAdminItem,
   AdminClassItem,
+  AdminPasswordResetResponse,
   AdminRecommendationLogItem,
   AdminUser,
   AnalyticsOverviewResponse,
@@ -28,6 +29,13 @@ export async function fetchAllUsers(): Promise<AdminUser[]> {
 
 export async function fetchAllStudiesForAdmin(): Promise<StudyListResponse> {
   const { data } = await apiClient.get<StudyListResponse>("/api/admin/studies");
+  return data;
+}
+
+export async function resetUserPasswordByAdmin(userId: number): Promise<AdminPasswordResetResponse> {
+  const { data } = await apiClient.post<AdminPasswordResetResponse>(
+    `/api/admin/users/${userId}/reset-password`,
+  );
   return data;
 }
 

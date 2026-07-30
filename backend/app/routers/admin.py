@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.security import generate_temporary_password, hash_password
 from app.db.database import get_db
 from app.dependencies import get_current_admin, get_current_main_admin
 from app.models.admin_application import AdminApplication
@@ -31,7 +32,7 @@ from app.schemas.leaderboard import AdminClassResponse, ClassCreateRequest
 from app.schemas.recommendation import AdminRecommendationLogItem
 from app.schemas.study import StudyListResponse
 from app.schemas.update import UpdateCreateRequest, UpdateEditRequest, UpdateResponse
-from app.schemas.user import AdminUserResponse
+from app.schemas.user import AdminPasswordResetResponse, AdminUserResponse
 from app.utils.curriculum_mapper import to_curriculum_response, to_topic_response
 from app.utils.study_mapper import to_study_response
 
@@ -54,6 +55,22 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.delete(user)
     db.commit()
     return {"message": "회원이 삭제되었습니다."}
+
+
+@router.post(
+    "/users/{user_id}/reset-password",
+    response_model=AdminPasswordResetResponse,
+    summary="[관리자] 회원 비밀번호 재설정 (임시 비밀번호 발급)",
+)
+def reset_user_password(user_id: int, db: Session = Depends(get_db)):
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "회원을 찾을 수 없습니다.")
+
+    temporary_password = generate_temporary_password()
+    user.hashed_password = hash_password(temporary_password)
+    db.commit()
+    return AdminPasswordResetResponse(temporary_password=temporary_password)
 
 
 @router.get("/studies", response_model=StudyListResponse, summary="[관리자] 스터디 목록 조회")

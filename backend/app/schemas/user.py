@@ -138,6 +138,12 @@ class DeleteAccountRequest(BaseModel):
     password: str | None = Field(default=None, description="현재 비밀번호 (구글 전용 계정은 불필요)")
 
 
+class AdminPasswordResetResponse(BaseModel):
+    """[관리자] 회원 비밀번호 재설정 응답. 발급된 임시 비밀번호를 관리자가 본인에게 직접 전달해야 한다."""
+
+    temporary_password: str = Field(description="새로 발급된 임시 비밀번호 (평문, 이 응답에서만 확인 가능)")
+
+
 class AdminUserResponse(BaseModel):
     """관리자용 회원 목록 응답."""
 
