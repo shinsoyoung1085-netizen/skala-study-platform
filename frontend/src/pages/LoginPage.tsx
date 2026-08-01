@@ -5,6 +5,7 @@ import { Alert } from "@/components/common/Alert";
 import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
 import { GoogleAuthSection } from "@/components/auth/GoogleAuthSection";
+import { GoogleLinkHintBubble } from "@/components/auth/GoogleLinkHintBubble";
 import { extractErrorMessage } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -90,6 +91,7 @@ export function LoginPage() {
           <div className="h-px flex-1 bg-gray-100" />
         </div>
 
+        <GoogleLinkHintBubble />
         <GoogleAuthSection onSuccess={() => navigate("/home", { replace: true })} />
 
         <p className="mt-6 text-center text-sm text-gray-500">

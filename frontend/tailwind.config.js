@@ -55,11 +55,17 @@ export default {
           "0%": { transform: "translateY(0)", opacity: "1" },
           "100%": { transform: "translateY(-28px)", opacity: "0" },
         },
+        // 말풍선 등 안내 UI가 부드럽게 나타나는 효과
+        "fade-in": {
+          "0%": { transform: "translateY(-4px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
       },
       animation: {
         squish: "squish 0.35s ease-in-out infinite",
         bump: "bump 0.45s ease-out",
         "float-fade": "float-fade 0.9s ease-out forwards",
+        "fade-in": "fade-in 0.25s ease-out",
       },
     },
   },
