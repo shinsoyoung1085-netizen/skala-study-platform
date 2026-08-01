@@ -91,8 +91,10 @@ export function LoginPage() {
           <div className="h-px flex-1 bg-gray-100" />
         </div>
 
-        <GoogleLinkHintBubble />
-        <GoogleAuthSection onSuccess={() => navigate("/home", { replace: true })} />
+        <div className="group relative">
+          <GoogleLinkHintBubble />
+          <GoogleAuthSection onSuccess={() => navigate("/home", { replace: true })} />
+        </div>
 
         <p className="mt-6 text-center text-sm text-gray-500">
           아직 계정이 없으신가요?{" "}

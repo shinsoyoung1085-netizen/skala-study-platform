@@ -1,36 +1,15 @@
-import { useState } from "react";
-
-import { dismissGoogleLinkHint, shouldShowGoogleLinkHint } from "@/utils/googleLinkPromptStorage";
-
 /**
  * 로그인 페이지의 Google 로그인 버튼 위에 뜨는 안내 말풍선.
  * 기존 아이디/비밀번호 계정이 있는 사용자가 구글로 로그인해서 중복 계정을 만들지 않도록,
- * 마이페이지에서 연동하는 방법을 안내한다. 한 번 닫으면 이 브라우저에서는 다시 뜨지 않는다.
+ * 마이페이지에서 연동하는 방법을 안내한다.
+ * 부모(.group)에 마우스를 올리면 나타나고, 벗어나면 사라진다 — 상태 없이 순수 CSS로 동작한다.
  */
 export function GoogleLinkHintBubble() {
-  const [visible, setVisible] = useState(shouldShowGoogleLinkHint);
-
-  if (!visible) return null;
-
-  const handleClose = () => {
-    dismissGoogleLinkHint();
-    setVisible(false);
-  };
-
   return (
-    <div className="relative mx-auto mb-4 w-full max-w-[320px] animate-fade-in">
+    <div className="pointer-events-none absolute left-1/2 top-0 z-10 w-full max-w-[280px] -translate-x-1/2 -translate-y-[calc(100%+10px)] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
       <div className="relative rounded-2xl border border-primary-200 bg-white px-4 py-3 shadow-lg">
-        <button
-          type="button"
-          onClick={handleClose}
-          aria-label="안내 닫기"
-          className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-        >
-          ✕
-        </button>
-
-        <p className="pr-5 text-sm font-bold text-gray-900">💡 기존 계정과 연동하고 싶으신가요?</p>
-        <p className="mt-1 pr-1 text-xs leading-relaxed text-gray-600">
+        <p className="text-sm font-bold text-gray-900">💡 기존 계정과 연동하고 싶으신가요?</p>
+        <p className="mt-1 text-xs leading-relaxed text-gray-600">
           일반 로그인 후 <span className="font-semibold text-primary">마이페이지</span>에서 구글 계정을 연동해
           주세요!
         </p>
