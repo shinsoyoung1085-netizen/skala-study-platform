@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.google_oauth import InvalidGoogleTokenError, verify_google_id_token
 from app.core.security import hash_password, verify_password
 from app.db.database import get_db
 from app.dependencies import get_current_user
@@ -22,6 +23,7 @@ from app.models.study import StudyMember
 from app.models.user import User, UserSkill
 from app.schemas.admin_application import AdminApplicationCreateRequest, AdminApplicationResponse
 from app.schemas.curriculum import CurriculumAssignRequest, CurriculumSummary
+from app.schemas.google_auth import GoogleLoginRequest
 from app.schemas.leaderboard import ClassSummary
 from app.schemas.recommendation import MyPointsResponse, ReceivedRecommendationItem
 from app.schemas.user import (
@@ -56,6 +58,7 @@ def _build_profile_response(user: User, db: Session) -> UserProfileResponse:
         points=user.points,
         picture_url=user.picture_url,
         has_password=user.hashed_password is not None,
+        google_linked=user.google_id is not None,
         skills=[
             UserSkillResponse(
                 category=s.category, level=s.level, level_label=SKILL_LEVEL_LABELS.get(s.level, s.level)
@@ -173,6 +176,31 @@ def change_my_password(
     current_user.hashed_password = hash_password(payload.new_password)
     db.commit()
     return {"message": "비밀번호가 변경되었습니다."}
+
+
+@router.post("/me/link-google", response_model=UserProfileResponse, summary="현재 계정에 구글 계정 연동")
+def link_google_account(
+    payload: GoogleLoginRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        profile = verify_google_id_token(payload.id_token)
+    except InvalidGoogleTokenError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "구글 로그인 검증에 실패했습니다.")
+
+    existing = db.scalar(select(User).where(User.google_id == profile.google_id))
+    if existing is not None and existing.id != current_user.id:
+        raise HTTPException(status.HTTP_409_CONFLICT, "이미 다른 계정에 연동된 구글 계정입니다.")
+
+    if existing is None:
+        current_user.google_id = profile.google_id
+        if not current_user.picture_url:
+            current_user.picture_url = profile.picture
+        db.commit()
+        db.refresh(current_user)
+
+    return _build_profile_response(current_user, db)
 
 
 def _to_application_response(application: AdminApplication) -> AdminApplicationResponse:

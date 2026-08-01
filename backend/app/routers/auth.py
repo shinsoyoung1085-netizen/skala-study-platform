@@ -53,6 +53,7 @@ def _to_profile_response(user: User, joined_study_count: int = 0) -> UserProfile
         points=user.points,
         picture_url=user.picture_url,
         has_password=user.hashed_password is not None,
+        google_linked=user.google_id is not None,
         created_at=user.created_at,
     )
 

@@ -1,5 +1,6 @@
 """Google 소셜 로그인/가입 API 테스트. 실제 구글 서버 대신 토큰 검증 함수를 모킹한다."""
 import app.routers.auth as auth_router
+import app.routers.users as users_router
 from app.core.google_oauth import GoogleProfile
 
 
@@ -8,6 +9,15 @@ def _mock_google_profile(monkeypatch, *, google_id="g-123", email="new@gmail.com
         return GoogleProfile(google_id=google_id, email=email, name=name, picture=picture)
 
     monkeypatch.setattr(auth_router, "verify_google_id_token", fake_verify)
+
+
+def _mock_google_profile_for_linking(
+    monkeypatch, *, google_id="g-123", email="new@gmail.com", name="새회원", picture="https://pic"
+):
+    def fake_verify(id_token: str) -> GoogleProfile:
+        return GoogleProfile(google_id=google_id, email=email, name=name, picture=picture)
+
+    monkeypatch.setattr(users_router, "verify_google_id_token", fake_verify)
 
 
 def _signup_and_login(client, username="hong123", email="hong@skala.com", skala_id="SKALA-0001"):
@@ -136,3 +146,38 @@ def test_google_only_account_can_delete_without_password(client, monkeypatch):
 
     res = client.request("DELETE", "/api/users/me", json={}, headers=headers)
     assert res.status_code == 200
+
+
+def test_link_google_account_to_existing_password_account(client, monkeypatch):
+    token = _signup_and_login(client, username="linkme1", email="linkme1@skala.com", skala_id="SKALA-LK1")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    _mock_google_profile_for_linking(monkeypatch, google_id="g-link-1", email="personal@gmail.com")
+    res = client.post("/api/users/me/link-google", json={"id_token": "fake"}, headers=headers)
+    assert res.status_code == 200
+    body = res.json()
+    assert body["google_linked"] is True
+    assert body["picture_url"] == "https://pic"
+    # 기존 계정 이메일은 그대로 유지되어야 한다 (구글 이메일로 덮어쓰지 않는다).
+    assert body["email"] == "linkme1@skala.com"
+
+
+def test_link_google_account_conflict_when_already_linked_elsewhere(client, monkeypatch):
+    token_a = _signup_and_login(client, username="linka", email="linka@skala.com", skala_id="SKALA-LKA")
+    token_b = _signup_and_login(client, username="linkb", email="linkb@skala.com", skala_id="SKALA-LKB")
+
+    _mock_google_profile_for_linking(monkeypatch, google_id="g-shared", email="shared@gmail.com")
+    first = client.post(
+        "/api/users/me/link-google", json={"id_token": "fake"}, headers={"Authorization": f"Bearer {token_a}"}
+    )
+    assert first.status_code == 200
+
+    second = client.post(
+        "/api/users/me/link-google", json={"id_token": "fake"}, headers={"Authorization": f"Bearer {token_b}"}
+    )
+    assert second.status_code == 409
+
+
+def test_link_google_account_requires_authentication(client):
+    res = client.post("/api/users/me/link-google", json={"id_token": "fake"})
+    assert res.status_code == 401

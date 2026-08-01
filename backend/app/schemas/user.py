@@ -121,6 +121,7 @@ class UserProfileResponse(BaseModel):
     points: int = Field(description="모임장 익명 추천으로 적립된 누적 포인트")
     picture_url: str | None = Field(default=None, description="구글 로그인 연동 시 프로필 사진")
     has_password: bool = Field(description="비밀번호 로그인 사용 가능 여부 (구글 전용 계정은 false)")
+    google_linked: bool = Field(description="구글 계정 연동 여부")
     skills: list[UserSkillResponse] = Field(default_factory=list, description="분야별 이해도(역량) 프로필")
     curriculum: CurriculumSummary | None = Field(default=None, description="소속 교육과정")
     study_class: ClassSummary | None = Field(default=None, description="소속 반 (리더보드)")

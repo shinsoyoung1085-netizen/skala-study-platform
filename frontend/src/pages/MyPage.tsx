@@ -12,6 +12,7 @@ import {
 } from "@/api/users";
 import { checkEmail, checkUsername } from "@/api/auth";
 import { clearStoredToken, extractErrorMessage } from "@/api/client";
+import { LinkGoogleSection } from "@/components/auth/LinkGoogleSection";
 import { Alert } from "@/components/common/Alert";
 import { AvailabilityHint } from "@/components/common/AvailabilityHint";
 import { Badge } from "@/components/common/Badge";
@@ -314,6 +315,8 @@ export function MyPage() {
             정보 저장
           </Button>
         </form>
+
+        <LinkGoogleSection />
 
         <form onSubmit={handlePasswordSubmit} className="card flex flex-col gap-4">
           <h3 className="text-base font-bold text-gray-900">비밀번호 변경</h3>

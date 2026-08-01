@@ -54,6 +54,7 @@ export interface UserProfile {
   points: number;
   picture_url: string | null;
   has_password: boolean;
+  google_linked: boolean;
   skills: UserSkill[];
   curriculum: CurriculumSummary | null;
   study_class: ClassSummary | null;
